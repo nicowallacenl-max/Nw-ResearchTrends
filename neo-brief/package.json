@@ -1,0 +1,19 @@
+{
+  "name": "neo-brief",
+  "version": "1.0.0",
+  "description": "N.E.O Daily Fashion Intelligence Brief — automated email via Anthropic web search",
+  "main": "neo-brief.js",
+  "scripts": {
+    "start": "node neo-brief.js",
+    "now": "node neo-brief.js --now"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "dotenv": "^16.4.7",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.16"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
