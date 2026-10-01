@@ -35,8 +35,8 @@ nav ul{display:flex;gap:34px;list-style:none;padding:0}
 nav a{font:500 .72rem var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--muted);transition:.2s}nav a:hover{color:var(--brand2)}
 .nav .btn{padding:13px 22px}
 /* hero */
-.hero{min-height:min(100vh,960px);padding:150px 0 0;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;background:radial-gradient(900px 600px at 78% 35%,rgba(30,105,184,.14),transparent 65%),radial-gradient(600px 400px at 10% 90%,rgba(30,105,184,.06),transparent 70%),var(--bg)}
-.floor{position:absolute;left:-20%;right:-20%;bottom:0;height:46%;background:linear-gradient(var(--line) 1px,transparent 1px) 0 0/100% 46px,linear-gradient(90deg,var(--line) 1px,transparent 1px) 0 0/70px 100%;transform:perspective(420px) rotateX(62deg);transform-origin:bottom;mask-image:linear-gradient(transparent,#000 70%);-webkit-mask-image:linear-gradient(transparent,#000 70%);opacity:.9}
+.hero{min-height:min(100vh,960px);padding:150px 0 0;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;background:linear-gradient(90deg,#fff 0,rgba(255,255,255,.9) 30%,rgba(255,255,255,0) 62%),url(hero.jpg) 70% 60%/cover no-repeat,var(--bg)}
+.floor{display:none;position:absolute;left:-20%;right:-20%;bottom:0;height:46%;background:linear-gradient(var(--line) 1px,transparent 1px) 0 0/100% 46px,linear-gradient(90deg,var(--line) 1px,transparent 1px) 0 0/70px 100%;transform:perspective(420px) rotateX(62deg);transform-origin:bottom;mask-image:linear-gradient(transparent,#000 70%);-webkit-mask-image:linear-gradient(transparent,#000 70%);opacity:.9}
 .car{position:absolute;right:0;top:30%;width:min(760px,58vw);filter:drop-shadow(0 6px 18px var(--glow))}
 .car path,.car circle,.car line{fill:none;stroke:var(--brand);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .car .body{stroke-dasharray:3200;stroke-dashoffset:3200;animation:draw 3.2s .2s ease forwards}
@@ -48,8 +48,8 @@ nav a{font:500 .72rem var(--mono);letter-spacing:.22em;text-transform:uppercase;
 @keyframes ping{0%{transform:scale(.4);opacity:1}100%{transform:scale(2.2);opacity:0}}
 .tag{position:absolute;font:500 .62rem var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--brand2);background:#fff;border:1px solid var(--brand);padding:6px 10px}
 .hero .wrap{position:relative;z-index:2;padding-bottom:90px}
-.hero h1{max-width:13ch;font-size:clamp(3rem,8vw,7rem);text-shadow:none}
-.hero p{color:var(--muted);font-size:1.2rem;max-width:46ch;margin:26px 0 38px}
+.hero h1{max-width:10ch;font-size:clamp(2.8rem,6.4vw,6rem);text-shadow:none}
+.hero p{color:var(--muted);font-size:1.2rem;max-width:38ch;margin:26px 0 38px}
 .cta{display:flex;flex-wrap:wrap;gap:16px}
 .strip{position:relative;z-index:2;border-top:1px solid var(--line);background:rgba(255,255,255,.85);backdrop-filter:blur(10px);width:100%}
 .strip .wrap{padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
@@ -101,5 +101,5 @@ footer.site{border-top:1px solid var(--line);padding:70px 0 40px;color:var(--mut
 .fgrid h4{font:500 .68rem var(--mono);letter-spacing:.25em;text-transform:uppercase;color:var(--brand2);margin-bottom:14px}
 .fgrid a:hover{color:var(--brand2)}
 .copy{margin-top:54px;padding-top:24px;border-top:1px solid var(--line);font:500 .68rem var(--mono);letter-spacing:.14em;text-transform:uppercase}
-@media(max-width:860px){nav ul{display:none}.split{grid-template-columns:1fr;gap:40px}section{padding:76px 0}.hero{padding-top:120px}.car{top:9%;right:-18%;width:130vw;opacity:.55}.strip div{border-left:0;border-top:1px solid var(--line)}}
+@media(max-width:860px){nav ul{display:none}.split{grid-template-columns:1fr;gap:40px}section{padding:76px 0}.hero{padding-top:120px;background:linear-gradient(180deg,rgba(255,255,255,.94) 0,rgba(255,255,255,.82) 55%,rgba(255,255,255,.3) 100%),url(hero.jpg) 72% 100%/cover no-repeat,var(--bg)}.hero h1{max-width:none}.car{top:9%;right:-18%;width:130vw;opacity:.55}.strip div{border-left:0;border-top:1px solid var(--line)}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important}.car .body{stroke-dashoffset:0}}
