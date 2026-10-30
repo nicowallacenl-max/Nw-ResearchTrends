@@ -6,7 +6,7 @@ Next.js (App Router) + TypeScript + Tailwind, Supabase Postgres + Auth.
 ## Status
 - [x] Session 1: database schema, views, RLS, seed (`supabase/`)
 - [x] Session 2: admin screen (jobs, quote lines, auto-assign, technicians & PINs, delay reasons, settings)
-- [ ] Session 3: wall board + clock on/off with PIN pad
+- [x] Session 3: wall board + clock on/off with PIN pad (`/board`)
 - [ ] Session 4: server-side clock rules, auto clock-off, flagged-segment review
 - [ ] Session 5: owner dashboard, PWA, kiosk set-up
 
@@ -27,12 +27,19 @@ npm run dev                  # http://localhost:3000
    ```
    Use `'owner'` instead of `'admin'` for read-only owner access (dashboard comes in Session 5).
 
+## Pair the workshop tablet
+On the tablet, sign in as an admin, open **Settings**, tap **Use this device as the wall board**. The tablet keeps
+showing `/board` from then on (you can sign out). Revoke a lost tablet from the same page.
+
 ## Database
 ```
 supabase/migrations/…01_schema.sql         tables, enums, constraints, audit triggers
 supabase/migrations/…02_views.sql          derived-hours / dashboard views
 supabase/migrations/…03_rls_and_pin.sql    RLS, grants, PIN functions
 supabase/migrations/…04_advisor_fixes.sql  Supabase security-advisor fixes
+supabase/migrations/…05_kiosk.sql          wall board: device pairing + clock-rule functions
+supabase/migrations/…06_…                  advisor fix
 supabase/seed.sql                          dev seed (PINs 1111 / 2222 / 3333)
 supabase/tests/smoke.sql                   constraint + view checks (scratch Postgres)
+supabase/tests/kiosk.sql                   clock-rule checks (scratch Postgres)
 ```
