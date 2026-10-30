@@ -3,6 +3,7 @@ import { signOut } from "@/app/login/actions";
 import { requireAdmin } from "@/lib/auth";
 
 const NAV = [
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/admin/jobs", label: "Jobs" },
   { href: "/admin/technicians", label: "Technicians" },
   { href: "/admin/technician-jobs", label: "Technician jobs" },

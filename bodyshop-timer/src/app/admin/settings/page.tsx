@@ -56,10 +56,28 @@ export default async function SettingsPage({ searchParams }: { searchParams: Fla
 
       <div className="mt-10">
         <Card title="Wall board tablets">
-          <p className="mb-4 text-sm text-stone-600">
-            Open this page on the workshop tablet (signed in as admin) and tap the button. The tablet then shows the wall board
-            and stays paired. You can sign out afterwards.
-          </p>
+          <div className="mb-5 grid gap-4 text-sm text-stone-700 md:grid-cols-2">
+            <div>
+              <h3 className="mb-1 font-semibold">Android tablet (Chrome)</h3>
+              <ol className="list-decimal space-y-1 pl-5">
+                <li>Open <b>bodyshop-timer.vercel.app/board</b> in Chrome, tap <b>⋮</b> then <b>Install app</b> (or <i>Add to home screen</i>).</li>
+                <li>Open the new <b>Job Board</b> app. Tap <b>Admin sign-in</b>, sign in, open <b>Settings</b>, tap the button below.</li>
+                <li>Lock it to the app: Settings → Security → <b>App pinning</b> on, then pin Job Board from the recent-apps screen.</li>
+              </ol>
+            </div>
+            <div>
+              <h3 className="mb-1 font-semibold">iPad (Safari)</h3>
+              <ol className="list-decimal space-y-1 pl-5">
+                <li>Open <b>bodyshop-timer.vercel.app/board</b> in Safari, tap <b>Share</b> then <b>Add to Home Screen</b>.</li>
+                <li>Open <b>Job Board</b> from the home screen and pair it from <i>inside</i> the app (sign in, Settings, button below). Pairing in Safari doesn&apos;t carry over.</li>
+                <li>Lock it to the app: Settings → Accessibility → <b>Guided Access</b> on, then triple-click the side button in Job Board.</li>
+              </ol>
+            </div>
+            <p className="text-stone-500 md:col-span-2">
+              Keep the tablet on its charger and in landscape. The board keeps the screen awake while it&apos;s open, and you can sign out of
+              the admin once it&apos;s paired.
+            </p>
+          </div>
           <form action={pairThisDevice} className="mb-6 flex flex-wrap items-end gap-3">
             <Field label="Name for this device" className="min-w-56">
               <Input name="name" defaultValue="Workshop tablet" />

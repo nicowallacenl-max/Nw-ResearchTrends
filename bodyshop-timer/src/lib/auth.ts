@@ -16,6 +16,7 @@ export async function requireStaff() {
 // Admin screens only. Signed-in non-admins see /no-access. The database enforces this too (RLS).
 export async function requireAdmin() {
   const staff = await requireStaff();
+  if (staff.role === "owner") redirect("/dashboard");
   if (staff.role !== "admin") redirect("/no-access");
   return staff;
 }
