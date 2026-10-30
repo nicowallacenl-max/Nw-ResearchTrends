@@ -60,3 +60,35 @@ export type Settings = {
   pin_lock_minutes: number;
   warn_pct: number;
 };
+
+// Job substatus, derived from the timers (v_job_substatus).
+export type Substatus = "not_started" | "working" | "paused" | "stopped" | "idle" | "done";
+export type JobSubstatus = { job_id: string; substatus: Substatus; reason: string | null; since: string | null; working_count: number };
+
+export const SUBSTATUS_TONE: Record<Substatus, "stone" | "green" | "amber" | "red" | "blue"> = {
+  not_started: "stone",
+  working: "green",
+  paused: "amber",
+  stopped: "red",
+  idle: "blue",
+  done: "stone",
+};
+
+export function substatusLabel(s: Pick<JobSubstatus, "substatus" | "reason" | "working_count">) {
+  switch (s.substatus) {
+    case "not_started": return "Not started";
+    case "working": return s.working_count > 1 ? `Being worked on (${s.working_count})` : "Being worked on";
+    case "paused": return `Paused – ${s.reason}`;
+    case "stopped": return "Stopped at knock-off";
+    case "idle": return "Idle – ready to continue";
+    case "done": return "Done";
+  }
+}
+
+// "2h 15m" / "40m" since an ISO time.
+export function durationSince(iso: string | null, now = Date.now()) {
+  if (!iso) return "";
+  const mins = Math.max(0, Math.floor((now - Date.parse(iso)) / 60000));
+  const d = Math.floor(mins / 1440), h = Math.floor((mins % 1440) / 60), m = mins % 60;
+  return d ? `${d}d ${h}h` : h ? `${h}h ${m}m` : `${m}m`;
+}

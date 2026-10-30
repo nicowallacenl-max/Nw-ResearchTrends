@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { completeWork, pauseWork, startWork } from "./actions";
 import type { BoardData, BoardJob, BoardLine, KioskResult } from "@/lib/kiosk";
+import { durationSince } from "@/lib/types";
 
 // Wall board for a landscape tablet. Everything is a big tap target (>= 64px); the only text input is the PIN pad.
 
@@ -297,7 +298,16 @@ function JobTile({ job, data, now, name, onOpen }: { job: BoardJob; data: BoardD
       </div>
       <ProcedureStrip lines={job.lines} />
       <div className="flex min-h-14 flex-wrap items-center gap-2 px-4 py-3">
-        {running.length === 0 ? (
+        {running.length === 0 && job.substatus === "paused" ? (
+          // Paused: say why and for how long, so anyone walking past can see the job is waiting.
+          <span className="flex w-full items-center gap-2 rounded-lg bg-amber-500 px-3 py-1.5 text-base font-bold text-stone-950">
+            <span aria-hidden>⏸</span>
+            <span className="truncate">Paused · {job.substatus_reason}</span>
+            {job.substatus_since && <span className="ml-auto shrink-0 tabular-nums">{durationSince(job.substatus_since, now)}</span>}
+          </span>
+        ) : running.length === 0 && job.substatus === "stopped" ? (
+          <span className="text-base font-semibold text-red-400">Stopped at knock-off · not restarted</span>
+        ) : running.length === 0 ? (
           <span className="text-base text-stone-500">Nobody on it</span>
         ) : (
           running.map((r) => (

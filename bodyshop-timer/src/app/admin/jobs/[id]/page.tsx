@@ -4,7 +4,10 @@ import { addLine, autoAssign, deleteJob, deleteLine, reopenLine, setJobStatus, u
 import { JobFields } from "../JobFields";
 import { Badge, Button, Card, Field, Flash, Input, PageHeader, Select, td, th } from "@/components/ui";
 import { requireAdmin } from "@/lib/auth";
-import { JOB_STATUS_LABEL, PROCEDURE_LABEL, PROCEDURES, type Job, type Procedure, type QuoteLine, type Technician } from "@/lib/types";
+import {
+  JOB_STATUS_LABEL, PROCEDURE_LABEL, PROCEDURES, SUBSTATUS_TONE, durationSince, substatusLabel,
+  type Job, type JobSubstatus, type Procedure, type QuoteLine, type Technician,
+} from "@/lib/types";
 
 // Rows are uncontrolled forms: keying by the saved values makes them redraw after a save.
 const rowKey = (r: object) => JSON.stringify(r);
@@ -43,12 +46,13 @@ export default async function JobPage({
   const [{ id }, { error, ok }] = await Promise.all([params, searchParams]);
   const { supabase } = await requireAdmin();
 
-  const [{ data: job }, { data: lines }, { data: techs }, { data: actuals }, { data: states }] = await Promise.all([
+  const [{ data: job }, { data: lines }, { data: techs }, { data: actuals }, { data: states }, { data: sub }] = await Promise.all([
     supabase.from("jobs").select("*").eq("id", id).maybeSingle<Job>(),
     supabase.from("quote_lines").select("*").eq("job_id", id).returns<QuoteLine[]>(),
     supabase.from("technicians").select("id, name, hourly_cost_rate, procedures, active, locked_until").order("name").returns<Technician[]>(),
     supabase.from("v_line_actuals").select("quote_line_id, actual_hours, helper_hours").eq("job_id", id),
     supabase.from("v_quote_line_state").select("quote_line_id, state").eq("job_id", id),
+    supabase.from("v_job_substatus").select("job_id, substatus, reason, since, working_count").eq("job_id", id).maybeSingle<JobSubstatus>(),
   ]);
   if (!job) notFound();
 
@@ -67,6 +71,12 @@ export default async function JobPage({
       <PageHeader title={`${job.rego} · ${[job.colour, job.make, job.model].filter(Boolean).join(" ") || "Vehicle"}`}>
         <div className="flex items-center gap-3">
           <Badge tone={job.status === "done" ? "stone" : "blue"}>{JOB_STATUS_LABEL[job.status]}</Badge>
+          {sub && sub.substatus !== "done" && (
+            <Badge tone={SUBSTATUS_TONE[sub.substatus]}>
+              {substatusLabel(sub)}
+              {(sub.substatus === "paused" || sub.substatus === "working") && sub.since ? ` · ${durationSince(sub.since)}` : ""}
+            </Badge>
+          )}
           <form action={setJobStatus}>
             <input type="hidden" name="id" value={job.id} />
             {job.status === "done" ? (

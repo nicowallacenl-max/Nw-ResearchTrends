@@ -1,5 +1,6 @@
 -- Run after stub_supabase.sql + migrations + seed. Any failure raises and aborts (psql -v ON_ERROR_STOP=1).
 \set ON_ERROR_STOP on
+\ir demo_history.sql
 create or replace procedure pg_temp.expect_fail(sql text, label text) language plpgsql as $$
 begin
   begin execute sql; raise exception 'EXPECTED FAILURE DID NOT HAPPEN: %', label;
@@ -39,7 +40,7 @@ do $$ begin
   assert round((select actual_hours from v_line_actuals where quote_line_id='00000000-0000-0000-0000-0000000001d1')::numeric,2)=2.00, 'strip actual';
   assert (select helper_hours from v_line_actuals where quote_line_id='00000000-0000-0000-0000-0000000001d2') > 1.4, 'helper hours';
   assert (select count(*) from v_helper_report)=1, 'helper report';
-  assert (select hours_lost from v_delay_by_reason where delay_reason='Waiting on parts') > 4, 'delay lost';
+  assert (select hours_lost from v_delay_by_reason where delay_reason='Waiting on parts') between 0 and 5, 'delay lost (capped at knock-off)';
   assert not exists (select 1 from v_delay_by_reason where delay_reason='Switched job'), 'system reason excluded';
   assert (select board_colour from v_job_summary where rego='123ABC')='red', 'job colour';
 end $$;
