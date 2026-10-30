@@ -1,13 +1,19 @@
-import { saveSettings } from "./actions";
-import { Button, Card, Field, Flash, Input, PageHeader, Select } from "@/components/ui";
+import { pairThisDevice, revokeDevice, saveSettings } from "./actions";
+import { Badge, Button, Card, Field, Flash, Input, PageHeader, Select, td, th } from "@/components/ui";
 import { requireAdmin } from "@/lib/auth";
 import type { FlashParams } from "@/lib/flash";
 import { HELPER_POLICY_LABEL, type Settings } from "@/lib/types";
 
+const when = (iso: string, tz: string) =>
+  new Date(iso).toLocaleString("en-AU", { timeZone: tz, day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+
 export default async function SettingsPage({ searchParams }: { searchParams: FlashParams }) {
   const { error, ok } = await searchParams;
   const { supabase } = await requireAdmin();
-  const { data: s } = await supabase.from("settings").select("*").single<Settings>();
+  const [{ data: s }, { data: devices }] = await Promise.all([
+    supabase.from("settings").select("*").single<Settings>(),
+    supabase.from("kiosk_devices").select("id, name, created_at, last_seen_at, revoked_at").order("created_at", { ascending: false }),
+  ]);
   if (!s) return <Flash error="Settings row is missing. Re-run the database migrations." />;
 
   return (
@@ -47,6 +53,52 @@ export default async function SettingsPage({ searchParams }: { searchParams: Fla
         </Card>
         <Button type="submit">Save settings</Button>
       </form>
+
+      <div className="mt-10">
+        <Card title="Wall board tablets">
+          <p className="mb-4 text-sm text-stone-600">
+            Open this page on the workshop tablet (signed in as admin) and tap the button. The tablet then shows the wall board
+            and stays paired. You can sign out afterwards.
+          </p>
+          <form action={pairThisDevice} className="mb-6 flex flex-wrap items-end gap-3">
+            <Field label="Name for this device" className="min-w-56">
+              <Input name="name" defaultValue="Workshop tablet" />
+            </Field>
+            <Button type="submit">Use this device as the wall board</Button>
+          </form>
+          {!!devices?.length && (
+            <table className="w-full text-sm">
+              <thead className="border-b border-stone-200">
+                <tr>
+                  <th className={th}>Device</th>
+                  <th className={th}>Paired</th>
+                  <th className={th}>Last seen</th>
+                  <th className={th}></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-stone-100">
+                {devices.map((d) => (
+                  <tr key={d.id} className={d.revoked_at ? "text-stone-400" : ""}>
+                    <td className={td}>{d.name}</td>
+                    <td className={td}>{when(d.created_at, s.time_zone)}</td>
+                    <td className={td}>{d.last_seen_at ? when(d.last_seen_at, s.time_zone) : "Never"}</td>
+                    <td className={`${td} text-right`}>
+                      {d.revoked_at ? (
+                        <Badge>Revoked</Badge>
+                      ) : (
+                        <form action={revokeDevice}>
+                          <input type="hidden" name="id" value={d.id} />
+                          <Button variant="danger">Revoke</Button>
+                        </form>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Card>
+      </div>
     </>
   );
 }

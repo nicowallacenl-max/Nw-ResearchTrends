@@ -1,6 +1,9 @@
 "use server";
 
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
+import { KIOSK_COOKIE, KIOSK_COOKIE_MAX_AGE } from "@/lib/kiosk";
 import { back, friendly } from "@/lib/flash";
 import { num, str } from "@/lib/form";
 import { HELPER_POLICY_LABEL, type HelperPolicy } from "@/lib/types";
@@ -33,4 +36,26 @@ export async function saveSettings(form: FormData) {
     .eq("id", true);
   if (error) back(PATH, { error: friendly(error) });
   back(PATH, { ok: "Settings saved." });
+}
+
+// Pair the browser this is clicked on as a wall board: store the device key in a long-lived httpOnly cookie.
+export async function pairThisDevice(form: FormData) {
+  const { supabase } = await requireAdmin();
+  const { data: key, error } = await supabase.rpc("pair_kiosk_device", { p_name: str(form, "name") || "Wall board" });
+  if (error || !key) back(PATH, { error: friendly(error) });
+  (await cookies()).set(KIOSK_COOKIE, key as string, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: KIOSK_COOKIE_MAX_AGE,
+  });
+  redirect("/board");
+}
+
+export async function revokeDevice(form: FormData) {
+  const { supabase } = await requireAdmin();
+  const { error } = await supabase.from("kiosk_devices").update({ revoked_at: new Date().toISOString() }).eq("id", str(form, "id"));
+  if (error) back(PATH, { error: friendly(error) });
+  back(PATH, { ok: "Device revoked. It can no longer use the wall board." });
 }
