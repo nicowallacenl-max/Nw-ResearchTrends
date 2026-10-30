@@ -39,6 +39,9 @@ export type BoardJob = {
   board_colour: "green" | "amber" | "red";
   quoted_hours: number;
   actual_hours: number;
+  substatus: "not_started" | "working" | "paused" | "stopped" | "idle" | "done";
+  substatus_reason: string | null;
+  substatus_since: string | null;
   lines: BoardLine[];
 };
 

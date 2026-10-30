@@ -41,8 +41,13 @@ supabase/migrations/…05_kiosk.sql          wall board: device pairing + clock-
 supabase/migrations/…06_…                  advisor fix
 supabase/migrations/…07_clock_off_and_review.sql  knock-off auto clock-off + admin review/correct
 supabase/migrations/…08_schedule_clock_off.sql    pg_cron schedule (every 5 minutes)
-supabase/seed.sql                          dev seed (PINs 1111 / 2222 / 3333)
+supabase/migrations/…09_job_substatus.sql         derived job substatus (working / paused + reason / stopped / idle)
+supabase/migrations/…10_pause_time_and_technician_report.sql  pause time capped at knock-off; per-technician timer view
+supabase/seed.sql                          dev seed: technicians (PINs 1111 / 2222 / 3333), jobs, reasons. No timer history.
 supabase/tests/smoke.sql                   constraint + view checks (scratch Postgres)
 supabase/tests/kiosk.sql                   clock-rule checks (scratch Postgres)
 supabase/tests/review.sql                  auto clock-off + review checks (scratch Postgres)
+supabase/tests/substatus.sql               job substatus checks
+supabase/tests/technician_report.sql       pause-time capping + technician report view
+supabase/tests/demo_history.sql            demo timers loaded by smoke.sql only
 ```
