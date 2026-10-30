@@ -55,6 +55,23 @@ export function Board({ data }: { data: BoardData }) {
     return m;
   }, [data.jobs]);
 
+  // Kiosk: keep the screen awake while the board is showing, and register the service worker so the
+  // browser offers "Install app". Both are best-effort; unsupported browsers just skip them.
+  useEffect(() => {
+    let lock: { release: () => Promise<void> } | null = null;
+    const wakeLock = (navigator as Navigator & { wakeLock?: { request: (t: "screen") => Promise<{ release: () => Promise<void> }> } }).wakeLock;
+    const acquire = () => {
+      if (wakeLock && document.visibilityState === "visible") wakeLock.request("screen").then((l) => (lock = l)).catch(() => {});
+    };
+    acquire();
+    document.addEventListener("visibilitychange", acquire);
+    navigator.serviceWorker?.register("/sw.js").catch(() => {});
+    return () => {
+      document.removeEventListener("visibilitychange", acquire);
+      lock?.release().catch(() => {});
+    };
+  }, []);
+
   // Keep the board fresh; close abandoned dialogs so the next person starts clean.
   useEffect(() => {
     const t = setInterval(() => router.refresh(), REFRESH_MS);

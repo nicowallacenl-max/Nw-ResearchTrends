@@ -8,7 +8,7 @@ Next.js (App Router) + TypeScript + Tailwind, Supabase Postgres + Auth.
 - [x] Session 2: admin screen (jobs, quote lines, auto-assign, technicians & PINs, delay reasons, settings)
 - [x] Session 3: wall board + clock on/off with PIN pad (`/board`)
 - [x] Session 4: server-side clock rules, auto clock-off (every 5 min via pg_cron), flagged-segment review (`/admin/review`)
-- [ ] Session 5: owner dashboard, PWA, kiosk set-up
+- [x] Session 5: owner dashboard (`/dashboard`), installable wall-board app, kiosk set-up guide (Admin → Settings)
 
 ## Run it
 ```
@@ -27,9 +27,13 @@ npm run dev                  # http://localhost:3000
    ```
    Use `'owner'` instead of `'admin'` for read-only owner access (dashboard comes in Session 5).
 
-## Pair the workshop tablet
-On the tablet, sign in as an admin, open **Settings**, tap **Use this device as the wall board**. The tablet keeps
-showing `/board` from then on (you can sign out). Revoke a lost tablet from the same page.
+## Set up the workshop tablet
+1. Install the board as an app: Android Chrome → ⋮ → **Install app**; iPad Safari → Share → **Add to Home Screen**.
+2. Open the installed **Job Board** app, tap **Admin sign-in**, sign in, open **Settings**, tap **Use this device as the wall board**.
+   (Pair from inside the installed app: on iPad it has its own storage, separate from Safari.)
+3. Lock it to the app: Android **App pinning**, iPad **Guided Access**. Keep it on charge; the board keeps the screen awake.
+
+Revoke a lost tablet from Settings. Owners (role `owner`) sign in to the read-only **dashboard** at `/dashboard`.
 
 ## Database
 ```
