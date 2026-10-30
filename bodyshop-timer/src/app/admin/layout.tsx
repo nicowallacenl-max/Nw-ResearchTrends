@@ -6,12 +6,14 @@ const NAV = [
   { href: "/admin/jobs", label: "Jobs" },
   { href: "/admin/technicians", label: "Technicians" },
   { href: "/admin/delay-reasons", label: "Delay reasons" },
+  { href: "/admin/review", label: "Review" },
   { href: "/admin/settings", label: "Settings" },
   { href: "/board", label: "Wall board ↗" },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { email } = await requireAdmin();
+  const { email, supabase } = await requireAdmin();
+  const { count: toReview } = await supabase.from("v_review_queue").select("id", { count: "exact", head: true });
   return (
     <div className="min-h-screen">
       <header className="border-b border-stone-200 bg-white">
@@ -23,6 +25,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             {NAV.map((n) => (
               <Link key={n.href} href={n.href} className="text-stone-600 hover:text-stone-900">
                 {n.label}
+                {n.href === "/admin/review" && !!toReview && (
+                  <span className="ml-1 rounded-full bg-amber-500 px-1.5 text-xs font-semibold text-white">{toReview}</span>
+                )}
               </Link>
             ))}
           </nav>
