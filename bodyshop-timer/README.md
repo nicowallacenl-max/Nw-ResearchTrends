@@ -12,7 +12,8 @@ Next.js (App Router) + TypeScript + Tailwind, Supabase Postgres + Auth.
 
 ## Run it
 ```
-cp .env.example .env.local   # fill in Supabase URL + publishable key
+# Supabase URL + publishable key default to the shop project (src/lib/supabase/config.ts);
+# copy .env.example to .env.local only to point at a different project.
 npm install
 npm run dev                  # http://localhost:3000
 ```
