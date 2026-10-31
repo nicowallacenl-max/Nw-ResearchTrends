@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Repair job detail</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFFFFF}
+a{color:#007A78}a:hover{color:#005C5A}
+.grid-bg{background-color:#FFFFFF;background-image:linear-gradient(rgba(37,40,42,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(37,40,42,.045) 1px,transparent 1px);background-size:48px 48px}
+.cut{clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,18px 100%,0 calc(100% - 18px))}
+.cut-sm{clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))}
+.scan{background-image:repeating-linear-gradient(0deg,rgba(0,238,234,.06) 0 1px,transparent 1px 4px)}
+</style>
+</helmet>
+<div class="grid-bg" style="min-height: 1080px; color: #25282A; font-family: Inter, system-ui, sans-serif; font-size: 14px; display: flex; flex-direction: column">
+
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 20px; padding: 18px 32px; border-bottom: 1px solid #E2E6E7; background: rgba(255,255,255,.94)">
+    <a href="Main.dc.html" class="cut-sm" aria-label="Back to dashboard" style="display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; background: #F5F5F5; border: 1px solid #E2E6E7; color: #25282A">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+    </a>
+    <span style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 22px; letter-spacing: .14em; color: #25282A; border-bottom: 3px solid #00EEEA; padding-bottom: 2px">AUTOBODIES</span>
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5F6368; letter-spacing: .12em; flex-grow: 1">// JOBS / AB-24117</span>
+    <button type="button" onClick="{{reset}}" class="cut-sm" style="min-height: 44px; padding: 0 18px; background: #FFFFFF; border: 1px solid #25282A; color: #25282A; font-family: 'Chakra Petch', sans-serif; font-weight: 700; letter-spacing: .1em; font-size: 13px; cursor: pointer">RESET DEMO</button>
+    <button type="button" onClick="{{advance}}" class="cut-sm" style="{{advanceStyle}}">{{advanceLabel}}</button>
+  </header>
+
+  <main style="max-width: 1376px; width: 100%; box-sizing: border-box; margin: 0 auto; padding: 28px 32px 48px; display: flex; flex-direction: column; gap: 24px">
+
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px">
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .18em; color: #007A78">JOB AB-24117 · BAY 01 · INSURANCE: SUNCORP</span>
+        <h1 style="margin: 0; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 44px; letter-spacing: .03em; text-transform: uppercase; color: #25282A">Toyota HiLux SR5</h1>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #5F6368">QLD 482·KTZ · Glacier White 040 · [VIN]</span>
+      </div>
+      <div class="cut" style="display: flex; gap: 28px; padding: 16px 22px; background: #FFFFFF; border: 1px solid #E2E6E7">
+        <div style="display: flex; flex-direction: column; gap: 4px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .14em; color: #5F6368">TECH</span><span style="font-family: 'Chakra Petch', sans-serif; font-size: 18px; font-weight: 600">Mia R.</span></div>
+        <div style="display: flex; flex-direction: column; gap: 4px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .14em; color: #5F6368">ETA</span><span style="{{etaStyle}}">{{eta}}</span></div>
+        <div style="display: flex; flex-direction: column; gap: 4px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .14em; color: #5F6368">ESTIMATE</span><span style="font-family: 'Chakra Petch', sans-serif; font-size: 18px; font-weight: 600">[TOTAL]</span></div>
+      </div>
+    </div>
+
+    <section aria-label="Repair stages" class="cut" style="{{stagePanel}}">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .16em; color: #5F6368">REPAIR PROGRESS</span>
+        <span style="{{statusStyle}}">{{statusText}}</span>
+      </div>
+      <ol style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px">
+        <sc-for list="{{stages}}" as="s" hint-placeholder-count="7">
+          <li style="display: flex; flex-direction: column; gap: 10px">
+            <div style="{{s.bar}}"></div>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .14em; color: #5F6368">{{s.num}}</span>
+            <span style="{{s.label}}">{{s.name}}</span>
+          </li>
+        </sc-for>
+      </ol>
+    </section>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 24px">
+      <section aria-labelledby="dmg" class="cut scan" style="flex: 1 1 520px; min-width: 0; padding: 22px 24px; background-color: #FFFFFF; border: 1px solid #E2E6E7; display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; justify-content: space-between; align-items: center">
+          <h2 id="dmg" style="margin: 0; font-family: 'Chakra Petch', sans-serif; font-size: 18px; letter-spacing: .14em; text-transform: uppercase">Damage scan</h2>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .14em; color: #B45309">3 PANELS FLAGGED</span>
+        </div>
+        <svg viewBox="0 0 560 300" style="width: 100%; height: auto" role="img" aria-label="Top-down vehicle outline in cyan with rear left quarter, tray side and rear bumper flagged as damaged">
+          <defs>
+            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+          <g fill="none" stroke="#00EEEA" stroke-width="2" filter="url(#glow)">
+            <path d="M70 90 Q60 150 70 210 L120 230 L470 230 Q505 228 512 200 L512 100 Q505 72 470 70 L120 70 Z"/>
+            <path d="M130 82 L250 82 L262 150 L250 218 L130 218 Q118 150 130 82 Z" opacity=".75"/>
+            <path d="M262 150 L262 76 M262 150 L262 224" opacity=".55"/>
+            <rect x="290" y="84" width="200" height="132" opacity=".75"/>
+            <path d="M150 70 L150 58 L190 58 L190 70 M150 230 L150 242 L190 242 L190 230 M410 70 L410 58 L450 58 L450 70 M410 230 L410 242 L450 242 L450 230" opacity=".85"/>
+          </g>
+          <g stroke="#25282A" stroke-width="2" fill="rgba(251,142,40,.35)">
+            <path d="M400 216 L490 216 L490 230 L470 230 L400 230 Z"/>
+            <rect x="300" y="210" width="96" height="16"/>
+            <path d="M506 110 L516 110 L516 190 L506 190 Z"/>
+          </g>
+          <g font-family="JetBrains Mono, monospace" font-size="11" fill="#25282A" letter-spacing="1.5">
+            <text x="400" y="262">R/L QUARTER · DENT</text>
+            <text x="290" y="200">TRAY SIDE · SCRATCH</text>
+            <text x="522" y="96">REAR BAR</text>
+          </g>
+          <g font-family="JetBrains Mono, monospace" font-size="10" fill="#5F6368" letter-spacing="1.5">
+            <text x="40" y="154">FRONT</text>
+          </g>
+        </svg>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .16em; color: #5F6368">PHOTOS · {{photoCount}}</span>
+          <sc-if value="{{hasCarousel}}" hint-placeholder-val="{{true}}">
+            <div style="display: flex; align-items: center; gap: 8px">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .12em; color: #5F6368">{{thumbRange}}</span>
+              <button type="button" onClick="{{thumbPrev}}" disabled="{{atStart}}" aria-label="Show previous photos" class="cut-sm" style="{{thumbPrevStyle}}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+              <button type="button" onClick="{{thumbNext}}" disabled="{{atEnd}}" aria-label="Show more photos" class="cut-sm" style="{{thumbNextStyle}}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+            </div>
+          </sc-if>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+          <sc-for list="{{thumbs}}" as="p" hint-placeholder-count="3">
+            <button type="button" onClick="{{p.open}}" aria-label="{{p.aria}}" class="cut-sm" style="position: relative; aspect-ratio: 4/3; padding: 0; background: #F5F5F5; border: 1px dashed #A4AAB3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; cursor: zoom-in; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5F6368; letter-spacing: .12em">
+              <span>[{{p.label}}]</span>
+              <span style="font-family: Inter, sans-serif; font-size: 12px; letter-spacing: 0; color: #333333">{{p.caption}}</span>
+              <span class="cut-sm" style="position: absolute; right: 8px; bottom: 8px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: #00EEEA; color: #0B0C0D">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+              </span>
+            </button>
+          </sc-for>
+        </div>
+        <sc-if value="{{hasCarousel}}" hint-placeholder-val="{{true}}">
+          <div style="display: flex; justify-content: center; gap: 6px" aria-hidden="true">
+            <sc-for list="{{pages}}" as="d" hint-placeholder-count="3">
+              <span style="{{d.style}}"></span>
+            </sc-for>
+          </div>
+        </sc-if>
+      </section>
+
+      <div style="flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+        <section aria-labelledby="est" class="cut" style="padding: 22px 24px; background: #FFFFFF; border: 1px solid #E2E6E7; display: flex; flex-direction: column; gap: 4px">
+          <h2 id="est" style="margin: 0 0 10px; font-family: 'Chakra Petch', sans-serif; font-size: 18px; letter-spacing: .14em; text-transform: uppercase">Estimate</h2>
+          <sc-for list="{{lines}}" as="l" hint-placeholder-count="5">
+            <div style="display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid #EEF0F1">
+              <span style="color: #333333">{{l.item}}</span>
+              <span style="font-family: 'JetBrains Mono', monospace; color: #5F6368">[PRICE]</span>
+            </div>
+          </sc-for>
+          <div style="display: flex; justify-content: space-between; padding-top: 14px">
+            <span style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; letter-spacing: .12em">TOTAL INC GST</span>
+            <span style="font-family: 'JetBrains Mono', monospace; color: #007A78; font-size: 16px">[TOTAL]</span>
+          </div>
+        </section>
+
+        <section aria-labelledby="log" class="cut" style="padding: 22px 24px; background: #FFFFFF; border: 1px solid #E2E6E7; display: flex; flex-direction: column; gap: 14px">
+          <h2 id="log" style="margin: 0; font-family: 'Chakra Petch', sans-serif; font-size: 18px; letter-spacing: .14em; text-transform: uppercase">Activity log</h2>
+          <sc-for list="{{log}}" as="g" hint-placeholder-count="4">
+            <div style="display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #007A78">{{g.t}}</span>
+              <span style="color: #333333; line-height: 1.5">{{g.msg}}</span>
+            </div>
+          </sc-for>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <sc-if value="{{lightbox}}" hint-placeholder-val="{{false}}">
+    <div role="dialog" aria-modal="true" aria-label="Photo viewer" style="position: fixed; inset: 0; z-index: 50; background: rgba(11,12,13,.84); display: flex; align-items: center; justify-content: center; padding: 32px; box-sizing: border-box">
+      <button type="button" onClick="{{close}}" aria-label="Close photo viewer" style="position: absolute; inset: 0; background: transparent; border: 0; cursor: zoom-out"></button>
+      <div class="cut" style="position: relative; width: 100%; max-width: 1080px; background: #FFFFFF; border: 1px solid #00EEEA; box-shadow: 0 0 40px rgba(0,238,234,.35); padding: 20px; display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px">
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .16em; color: #007A78">{{active.label}} · {{counter}}</span>
+            <span style="font-family: 'Chakra Petch', sans-serif; font-size: 20px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em">{{active.caption}}</span>
+          </div>
+          <button type="button" onClick="{{close}}" aria-label="Close photo viewer" class="cut-sm" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: #F5F5F5; border: 1px solid #E2E6E7; color: #25282A; cursor: pointer">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div style="position: relative; display: flex; align-items: center">
+          <div class="cut" style="flex-grow: 1; aspect-ratio: 16/10; background: #16181A; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; font-family: 'JetBrains Mono', monospace; letter-spacing: .14em; color: #E5E5E5; outline: 1px solid #2E3236">
+            <span style="font-size: 14px">[{{active.label}} · FULL SIZE]</span>
+            <span style="font-family: Inter, sans-serif; font-size: 13px; letter-spacing: 0; color: #A4AAB3">{{active.caption}}</span>
+          </div>
+          <button type="button" onClick="{{prev}}" aria-label="Previous photo" class="cut-sm" style="position: absolute; left: 12px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; background: #00EEEA; border: 0; color: #0B0C0D; cursor: pointer">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <button type="button" onClick="{{next}}" aria-label="Next photo" class="cut-sm" style="position: absolute; right: 12px; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; background: #00EEEA; border: 0; color: #0B0C0D; cursor: pointer">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
+        </div>
+        <div style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px">
+          <sc-for list="{{photos}}" as="p" hint-placeholder-count="3">
+            <button type="button" onClick="{{p.open}}" aria-label="{{p.aria}}" class="cut-sm" style="{{p.stripStyle}}">{{p.label}}</button>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"stage":{"editor":"int","default":3,"min":0,"max":7,"section":"Demo"},"$preview":{"width":1440,"height":1080}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { current: null, photo: null, thumbStart: 0 };
+  }
+  renderVals() {
+    const RED = '#E11D2E', GREEN = '#16A34A', TRACK = '#E2E6E7';
+    const names = ['Assess','Approve','Strip','Panel','Paint','Reassemble','QC & Ready'];
+    const total = names.length;
+    const start = Math.max(0, Math.min(total, this.props.stage ?? 3));
+    const current = this.state.current ?? start;
+    const complete = current >= total;
+    const stages = names.map((name, i) => {
+      const done = i < current, now = i === current && !complete;
+      const fill = complete ? GREEN : RED;
+      let bg = TRACK;
+      if (complete || done) bg = fill;
+      else if (now) bg = `linear-gradient(90deg,${RED} 50%,${TRACK} 50%)`;
+      return {
+        name,
+        num: String(i + 1).padStart(2, '0') + (complete ? ' · DONE' : now ? ' · NOW' : done ? ' · DONE' : ''),
+        bar: `height:8px;background:${bg};${complete || done || now ? `box-shadow:0 0 10px ${complete ? 'rgba(22,163,74,.45)' : 'rgba(225,29,46,.35)'}` : ''};transition:background .3s`,
+        label: `font-family:'Chakra Petch',sans-serif;font-weight:600;font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:${complete ? GREEN : now ? RED : done ? '#25282A' : '#5F6368'}`
+      };
+    });
+    const btn = (bg, fg) => `min-height:44px;padding:0 18px;background:${bg};border:0;color:${fg};font-family:'Chakra Petch',sans-serif;font-weight:700;letter-spacing:.1em;font-size:13px;cursor:pointer`;
+    const lines = ['Rear left quarter panel repair','Tray side respray & blend','Rear bumper bar R&R','Paint materials','Labour (panel & paint)'].map((item) => ({ item }));
+    const log = [
+      { t: '16:42', msg: 'Mia R. moved job to PANEL · quarter pulled and filled' },
+      { t: '11:05', msg: 'Suncorp approved assessment · claim [CLAIM #]' },
+      { t: 'THU', msg: 'Vehicle stripped, rear lights and bar removed' },
+      { t: 'WED', msg: 'Vehicle checked in · 3 photos added' }
+    ];
+    const photoData = [['PHOTO 01','Rear left quarter · dent'],['PHOTO 02','Tray side · scratch'],['PHOTO 03','Rear bumper bar · crack'],['PHOTO 04','Tail light housing'],['PHOTO 05','Quarter panel · after pull'],['PHOTO 06','Filler & primer'],['PHOTO 07','Paint code plate']];
+    const sel = this.state.photo;
+    const n = photoData.length;
+    const photos = photoData.map(([label, caption], i) => ({
+      label, caption, aria: `Expand ${label}: ${caption}`,
+      open: () => this.setState({ photo: i }),
+      stripStyle: `flex:1 0 96px;min-height:44px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;cursor:pointer;${i === sel ? 'background:#00EEEA;color:#0B0C0D;border:1px solid #00EEEA' : 'background:#F5F5F5;color:#333333;border:1px solid #E2E6E7'}`
+    }));
+    const active = sel === null ? photos[0] : photos[sel];
+    const PER = 3;
+    const hasCarousel = n > PER;
+    const maxStart = Math.max(0, n - PER);
+    const ts = Math.min(this.state.thumbStart, maxStart);
+    const atStart = ts <= 0, atEnd = ts >= maxStart;
+    const arrow = (off) => `width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid ${off ? '#E2E6E7' : '#00EEEA'};background:${off ? '#F5F5F5' : '#00EEEA'};color:${off ? '#A4AAB3' : '#0B0C0D'};cursor:${off ? 'default' : 'pointer'}`;
+    const pageCount = Math.ceil(n / PER);
+    const curPage = Math.min(pageCount - 1, Math.round(ts / PER));
+    const pages = Array.from({ length: pageCount }, (_, i) => ({ style: `width:${i === curPage ? 22 : 8}px;height:4px;background:${i === curPage ? '#00EEEA' : '#E2E6E7'};transition:width .2s` }));
+    return {
+      photos, active, hasCarousel, atStart, atEnd, pages,
+      thumbs: photos.slice(ts, ts + PER),
+      photoCount: String(n),
+      thumbRange: `${ts + 1}–${Math.min(n, ts + PER)} OF ${n}`,
+      thumbPrev: () => this.setState({ thumbStart: Math.max(0, ts - PER) }),
+      thumbNext: () => this.setState({ thumbStart: Math.min(maxStart, ts + PER) }),
+      thumbPrevStyle: arrow(atStart),
+      thumbNextStyle: arrow(atEnd),
+      lightbox: sel !== null,
+      counter: `${String((sel ?? 0) + 1).padStart(2, '0')} / ${String(n).padStart(2, '0')}`,
+      close: () => this.setState({ photo: null }),
+      prev: () => { const p = ((sel ?? 0) - 1 + n) % n; this.setState({ photo: p, thumbStart: Math.min(maxStart, Math.floor(p / PER) * PER) }); },
+      next: () => { const p = ((sel ?? 0) + 1) % n; this.setState({ photo: p, thumbStart: Math.min(maxStart, Math.floor(p / PER) * PER) }); },
+      stages, lines, log,
+      advance: () => this.setState({ current: Math.min(total, current + 1) }),
+      reset: () => this.setState({ current: start }),
+      advanceLabel: complete ? 'JOB COMPLETE' : current === total - 1 ? 'MARK COMPLETE' : 'ADVANCE STAGE',
+      advanceStyle: complete ? btn(GREEN, '#FFFFFF') : btn('#00EEEA', '#0B0C0D'),
+      statusText: complete ? 'COMPLETE · READY TO COLLECT' : `IN PROGRESS · ${current} OF ${total} DONE`,
+      statusStyle: `font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.14em;font-weight:500;color:${complete ? GREEN : RED}`,
+      stagePanel: `padding:22px 24px;background:#FFFFFF;border:1px solid ${complete ? GREEN : '#E2E6E7'};${complete ? 'box-shadow:0 0 24px rgba(22,163,74,.18)' : ''}`,
+      eta: complete ? 'Ready now' : 'Tue 3 Nov',
+      etaStyle: `font-family:'Chakra Petch',sans-serif;font-size:18px;font-weight:600;color:${complete ? GREEN : '#007A78'}`
+    };
+  }
+}
+</script>
+</body>
+</html>
