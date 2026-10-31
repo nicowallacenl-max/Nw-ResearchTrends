@@ -91,7 +91,8 @@ export default async function SettingsPage({ searchParams }: { searchParams: Fla
             <Button type="submit">Use this device as the wall board</Button>
           </form>
           {!!devices?.length && (
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+            <table className="w-full min-w-[520px] text-sm">
               <thead className={theadCls}>
                 <tr>
                   <th className={th}>Device</th>
@@ -120,6 +121,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Fla
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </Card>
       </div>

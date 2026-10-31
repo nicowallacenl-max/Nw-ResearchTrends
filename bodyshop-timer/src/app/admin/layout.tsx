@@ -26,10 +26,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link href="/admin" className="plain no-underline" aria-label="Autobodies dashboard"><Logo /></Link>
           <span className="font-mono text-[12px] uppercase tracking-[.12em] text-muted max-md:hidden">// Workshop OS</span>
         </div>
-        <form action="/admin/jobs" role="search" className="cut-sm flex min-w-[260px] flex-[0_1_360px] items-center gap-2.5 border border-line bg-bg-subtle px-3.5 py-2.5 max-sm:min-w-0 max-sm:flex-1">
+        <form action="/admin/jobs" role="search" className="cut-sm flex min-w-[260px] flex-[0_1_360px] items-center gap-2.5 border border-line bg-bg-subtle px-3.5 py-2.5 max-sm:order-3 max-sm:min-w-0 max-sm:basis-full">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
           <label htmlFor="q" className="sr-only">Search jobs</label>
-          <input id="q" name="q" type="search" placeholder="Search rego, job #, customer" className="grow bg-transparent text-[14px] text-ink outline-none placeholder:text-faint" />
+          <input id="q" name="q" type="search" placeholder="Search rego, job #, customer" className="w-full min-w-0 grow bg-transparent text-[14px] text-ink outline-none placeholder:text-faint" />
         </form>
         <Link href="/admin/jobs/new" className={`${buttonCls("primary")} plain gap-2 px-5 text-[14px] no-underline`}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>

@@ -229,9 +229,16 @@ export async function recordPhoto(input: { jobId: string; path: string; caption:
   if (!input.path.startsWith(`${input.jobId}/`)) return { ok: false, error: "Bad photo path." };
   const { error } = await supabase.from("job_photos").insert({ job_id: input.jobId, path: input.path, caption: input.caption || null, damage_id: input.damageId });
   if (error) return { ok: false, error: friendly(error) };
-  await supabase.from("job_events").insert({ job_id: input.jobId, kind: "photo", message: `Photo added${input.caption ? ` · ${input.caption}` : ""}` });
-  revalidatePath(`/admin/jobs/${input.jobId}`);
   return { ok: true };
+}
+
+// One activity-log line per upload batch ("3 photos added"), not one per photo.
+export async function logPhotosAdded(input: { jobId: string; count: number }) {
+  const { supabase } = await requireAdmin();
+  if (input.count > 0) {
+    await supabase.from("job_events").insert({ job_id: input.jobId, kind: "photo", message: `${input.count} photo${input.count === 1 ? "" : "s"} added` });
+  }
+  revalidatePath(`/admin/jobs/${input.jobId}`);
 }
 
 export async function deletePhoto(form: FormData) {

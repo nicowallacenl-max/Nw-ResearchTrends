@@ -137,7 +137,6 @@ export default async function JobPage({ params, searchParams }: { params: Promis
           <span className="font-mono text-[11px] tracking-[.16em] text-muted">REPAIR PROGRESS</span>
           <span className={`font-mono text-[12px] font-medium tracking-[.14em] ${complete ? "text-complete" : "text-progress"}`}>
             {complete ? "COMPLETE · READY TO COLLECT" : `IN PROGRESS · ${current} OF ${STAGE_COUNT} DONE`}
-            {sub && !complete && sub.substatus === "paused" ? ` · PAUSED: ${sub.reason?.toUpperCase()}` : ""}
           </span>
         </div>
         <ol className="m-0 grid list-none grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-2 p-0">
