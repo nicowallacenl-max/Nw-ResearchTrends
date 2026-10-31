@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Workshop dashboard</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFFFFF}
+a{color:#007A78}a:hover{color:#005C5A}
+.grid-bg{background-color:#FFFFFF;background-image:linear-gradient(rgba(37,40,42,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(37,40,42,.045) 1px,transparent 1px);background-size:48px 48px}
+.cut{clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,18px 100%,0 calc(100% - 18px))}
+.cut-sm{clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px))}
+</style>
+</helmet>
+<div class="grid-bg" style="min-height: 1080px; color: #25282A; font-family: Inter, system-ui, sans-serif; font-size: 14px; display: flex; flex-direction: column">
+
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 24px; padding: 18px 32px; border-bottom: 1px solid #E2E6E7; background: rgba(255,255,255,.94)">
+    <div style="display: flex; align-items: baseline; gap: 12px; flex-grow: 1">
+      <span style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 26px; letter-spacing: .14em; color: #25282A; border-bottom: 3px solid #00EEEA; padding-bottom: 2px">AUTOBODIES</span>
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5F6368; letter-spacing: .12em">// GOLD COAST · WORKSHOP OS</span>
+    </div>
+    <label class="cut-sm" style="display: flex; align-items: center; gap: 10px; min-width: 260px; flex: 0 1 360px; padding: 10px 14px; background: #F5F5F5; border: 1px solid #E2E6E7">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5F6368" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <span style="position: absolute; left: -9999px">Search jobs</span>
+      <input type="search" placeholder="Search rego, job #, customer" style="all: unset; flex-grow: 1; font-size: 14px; color: #25282A">
+    </label>
+    <a href="JobDetail.dc.html" class="cut-sm" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 20px; background: #00EEEA; color: #0B0C0D; text-decoration: none; font-family: 'Chakra Petch', sans-serif; font-weight: 700; letter-spacing: .1em; font-size: 14px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      NEW JOB
+    </a>
+  </header>
+
+  <div style="display: flex; flex-wrap: wrap; flex-grow: 1">
+    <nav aria-label="Main" style="flex: 1 1 220px; max-width: 240px; padding: 28px 16px; border-right: 1px solid #E2E6E7; display: flex; flex-direction: column; gap: 4px; background: rgba(245,245,245,.85)">
+      <sc-for list="{{nav}}" as="n" hint-placeholder-count="8">
+        <a href="#" style="{{n.style}}">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5F6368; width: 22px">{{n.code}}</span>
+          <span>{{n.label}}</span>
+        </a>
+      </sc-for>
+      <div class="cut" style="margin-top: auto; padding: 16px; background: #FFFFFF; border: 1px solid #E2E6E7; display: flex; flex-direction: column; gap: 8px">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .12em; color: #5F6368">PAINT BOOTH 01</span>
+        <span style="font-family: 'Chakra Petch', sans-serif; font-size: 28px; font-weight: 700; color: #25282A">60°C</span>
+        <span style="font-size: 12px; color: #5F6368">Bake cycle · 22 min left</span>
+        <div style="height: 6px; background: #E2E6E7"><div style="width: 63%; height: 6px; background: #E11D2E"></div></div>
+      </div>
+    </nav>
+
+    <main style="flex: 999 1 640px; min-width: 0; padding: 28px 32px 40px; display: flex; flex-direction: column; gap: 28px">
+      <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px">
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .18em; color: #007A78">SYS.STATUS // ONLINE</span>
+          <h1 style="margin: 0; font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 40px; letter-spacing: .04em; text-transform: uppercase">Workshop floor</h1>
+        </div>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #5F6368">SAT 31 OCT · 17:35 AEST</span>
+      </div>
+
+      <section aria-label="Key numbers" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px">
+        <sc-for list="{{kpis}}" as="k" hint-placeholder-count="4">
+          <div class="cut" style="{{k.style}}">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .14em; color: #5F6368">{{k.label}}</span>
+            <span style="font-family: 'Chakra Petch', sans-serif; font-weight: 700; font-size: 48px; line-height: 1; color: {{k.color}}">{{k.value}}</span>
+            <span style="font-size: 12px; color: #5F6368">{{k.note}}</span>
+          </div>
+        </sc-for>
+      </section>
+
+      <section aria-labelledby="bays" style="display: flex; flex-direction: column; gap: 14px">
+        <h2 id="bays" style="margin: 0; font-family: 'Chakra Petch', sans-serif; font-size: 18px; letter-spacing: .14em; text-transform: uppercase">Repair bays</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px">
+          <sc-for list="{{bays}}" as="b" hint-placeholder-count="6">
+            <a href="JobDetail.dc.html" class="cut" style="{{b.style}}">
+              <div style="display: flex; justify-content: space-between; align-items: center">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .14em; color: #5F6368">BAY {{b.bay}}</span>
+                <span class="cut-sm" style="{{b.chip}}">{{b.stage}}</span>
+              </div>
+              <span style="font-family: 'Chakra Petch', sans-serif; font-size: 20px; font-weight: 600; color: #25282A">{{b.vehicle}}</span>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #5F6368">{{b.rego}} · {{b.tech}}</span>
+              <div style="height: 6px; background: #E2E6E7"><div style="{{b.bar}}"></div></div>
+              <span style="font-size: 12px; color: #5F6368">{{b.eta}}</span>
+            </a>
+          </sc-for>
+        </div>
+      </section>
+
+      <section aria-labelledby="pipeline" style="display: flex; flex-direction: column; gap: 14px">
+        <h2 id="pipeline" style="margin: 0; font-family: 'Chakra Petch', sans-serif; font-size: 18px; letter-spacing: .14em; text-transform: uppercase">Job pipeline</h2>
+        <div class="cut" style="overflow-x: auto; background: #FFFFFF; border: 1px solid #E2E6E7">
+          <table style="width: 100%; min-width: 760px; border-collapse: collapse; font-size: 14px">
+            <thead>
+              <tr style="text-align: left; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: .14em; color: #5F6368; background: #F5F5F5">
+                <th style="padding: 14px 18px; border-bottom: 1px solid #E2E6E7; font-weight: 500">JOB #</th>
+                <th style="padding: 14px 18px; border-bottom: 1px solid #E2E6E7; font-weight: 500">VEHICLE</th>
+                <th style="padding: 14px 18px; border-bottom: 1px solid #E2E6E7; font-weight: 500">CUSTOMER</th>
+                <th style="padding: 14px 18px; border-bottom: 1px solid #E2E6E7; font-weight: 500">WORK</th>
+                <th style="padding: 14px 18px; border-bottom: 1px solid #E2E6E7; font-weight: 500">PAYER</th>
+                <th style="padding: 14px 18px; border-bottom: 1px solid #E2E6E7; font-weight: 500">STAGE</th>
+              </tr>
+            </thead>
+            <tbody>
+              <sc-for list="{{jobs}}" as="j" hint-placeholder-count="5">
+                <tr>
+                  <td style="padding: 14px 18px; border-bottom: 1px solid #EEF0F1; font-family: 'JetBrains Mono', monospace; color: #007A78">{{j.id}}</td>
+                  <td style="padding: 14px 18px; border-bottom: 1px solid #EEF0F1; color: #25282A">{{j.vehicle}}</td>
+                  <td style="padding: 14px 18px; border-bottom: 1px solid #EEF0F1; color: #333333">{{j.customer}}</td>
+                  <td style="padding: 14px 18px; border-bottom: 1px solid #EEF0F1; color: #333333">{{j.work}}</td>
+                  <td style="padding: 14px 18px; border-bottom: 1px solid #EEF0F1; color: #333333">{{j.payer}}</td>
+                  <td style="padding: 14px 18px; border-bottom: 1px solid #EEF0F1"><span class="cut-sm" style="{{j.chip}}">{{j.stage}}</span></td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const CYAN = '#00EEEA', AMBER = '#FB8E28', RED = '#E11D2E', GREEN = '#16A34A';
+    const chip = (bg, fg) => `display:inline-block;padding:4px 10px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;color:${fg};background:${bg}`;
+    const chipFor = (s) => s === 'READY' ? chip(GREEN, '#FFFFFF') : s === 'PARTS' ? chip(AMBER, '#0B0C0D') : s === 'ASSESS' ? chip('#E2E6E7', '#333333') : chip(CYAN, '#0B0C0D');
+    const navItems = ['Dashboard','Jobs','Quotes','Bookings','Customers','Parts','Paint lab','Reports'];
+    const nav = navItems.map((label, i) => ({
+      label, code: String(i + 1).padStart(2, '0'),
+      style: `display:flex;align-items:center;gap:10px;min-height:44px;padding:0 12px;text-decoration:none;font-family:'Chakra Petch',sans-serif;font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:14px;${i === 0 ? `color:#25282A;background:rgba(0,238,234,.18);border-left:3px solid ${CYAN}` : 'color:#333333;border-left:3px solid transparent'}`
+    }));
+    const kpiBase = 'display:flex;flex-direction:column;gap:10px;padding:20px 22px;background:#FFFFFF;';
+    const kpis = [
+      { label: 'ACTIVE JOBS', value: '18', note: '6 bays occupied', color: '#25282A', style: kpiBase + `border:1px solid ${CYAN};box-shadow:0 0 24px rgba(0,238,234,.25)` },
+      { label: 'IN PAINT BOOTH', value: '2', note: 'Next slot 18:10', color: '#25282A', style: kpiBase + 'border:1px solid #E2E6E7' },
+      { label: 'AWAITING PARTS', value: '4', note: '1 overdue from supplier', color: '#B45309', style: kpiBase + 'border:1px solid #E2E6E7' },
+      { label: 'READY FOR PICKUP', value: '5', note: 'Customers notified', color: GREEN, style: kpiBase + 'border:1px solid #E2E6E7' }
+    ];
+    const bayData = [
+      ['01','Toyota HiLux SR5','QLD 482·KTZ','Mia R.','PANEL',50,'ETA Tue 3 Nov'],
+      ['02','Mazda CX-5','QLD 917·BBQ','Jay T.','PAINT',72,'In booth · ETA Mon 2 Nov'],
+      ['03','BMW 330i','NSW DK·22·PL','Sam O.','PARTS',30,'Waiting on bumper bar'],
+      ['04','Ford Ranger XLT','QLD 105·UTE','Mia R.','ASSESS',10,'Insurer approval pending'],
+      ['05','Hyundai i30 N','QLD 777·HOT','Leo K.','REASSEMBLE',86,'ETA tomorrow'],
+      ['06','Mercedes C200','QLD 330·LUX','Jay T.','READY',100,'Complete · customer notified']
+    ];
+    const bays = bayData.map(([bay, vehicle, rego, tech, stage, pct, eta]) => {
+      const done = pct >= 100;
+      return {
+        bay, vehicle, rego, tech, stage, eta,
+        chip: chipFor(stage),
+        bar: `width:${pct}%;height:6px;background:${done ? GREEN : RED}`,
+        style: `display:flex;flex-direction:column;gap:10px;padding:18px 20px;text-decoration:none;color:inherit;background:#FFFFFF;border:1px solid ${done ? GREEN : stage === 'PARTS' ? AMBER : '#E2E6E7'}`
+      };
+    });
+    const jobs = [
+      ['AB-24117','Toyota HiLux SR5','[Customer name]','Rear quarter + tray','Suncorp','PANEL'],
+      ['AB-24118','Mazda CX-5','[Customer name]','Front bar respray','Private','PAINT'],
+      ['AB-24121','BMW 330i','[Customer name]','Bumper replace','Allianz','PARTS'],
+      ['AB-24124','Ford Ranger XLT','[Customer name]','Hail damage PDR','RACQ','ASSESS'],
+      ['AB-24126','Mercedes C200','[Customer name]','Door re-skin + paint','Private','READY']
+    ].map(([id, vehicle, customer, work, payer, stage]) => ({ id, vehicle, customer, work, payer, stage, chip: chipFor(stage) }));
+    return { nav, kpis, bays, jobs };
+  }
+}
+</script>
+</body>
+</html>
