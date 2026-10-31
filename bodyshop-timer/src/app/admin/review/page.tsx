@@ -1,5 +1,5 @@
 import { approveSegment } from "./actions";
-import { Badge, Button, Card, Flash, Input, PageHeader, td, th } from "@/components/ui";
+import { Badge, Button, Card, Flash, Input, PageHeader, td, th , theadCls } from "@/components/ui";
 import { requireAdmin } from "@/lib/auth";
 import type { FlashParams } from "@/lib/flash";
 import { hoursBetween, showTime, toLocalInput } from "@/lib/time";
@@ -46,7 +46,7 @@ export default async function ReviewPage({ searchParams }: { searchParams: Flash
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="border-b border-stone-200">
+              <thead className={theadCls}>
                 <tr>
                   <th className={th}>Technician</th>
                   <th className={th}>Job</th>
@@ -56,7 +56,7 @@ export default async function ReviewPage({ searchParams }: { searchParams: Flash
                   <th className={th}></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-stone-100">
+              <tbody>
                 {queue.map((q) => {
                   const fid = `rev-${q.id}`;
                   const started = toLocalInput(q.started_at, tz);
@@ -94,7 +94,7 @@ export default async function ReviewPage({ searchParams }: { searchParams: Flash
           <p className="text-sm text-stone-500">None yet.</p>
         ) : (
           <table className="w-full text-sm">
-            <thead className="border-b border-stone-200">
+            <thead className={theadCls}>
               <tr>
                 <th className={th}>Technician</th>
                 <th className={th}>Job</th>
@@ -102,7 +102,7 @@ export default async function ReviewPage({ searchParams }: { searchParams: Flash
                 <th className={th}>Reviewed</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-stone-100">
+            <tbody>
               {recent.map((r) => (
                 <tr key={r.id}>
                   <td className={td}>{r.technicians?.name}</td>

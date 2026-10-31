@@ -18,6 +18,8 @@ export async function saveSettings(form: FormData) {
   const warn_pct = num(form, "warn_pct");
   const pin_max_attempts = num(form, "pin_max_attempts");
   const pin_lock_minutes = num(form, "pin_lock_minutes");
+  const shop_phone = str(form, "shop_phone") || null;
+  const gst_rate = num(form, "gst_rate");
 
   if (!/^\d{2}:\d{2}$/.test(knock_off_time)) back(PATH, { error: "Knock-off time must be HH:MM." });
   try {
@@ -29,10 +31,11 @@ export async function saveSettings(form: FormData) {
   if (warn_pct === null || warn_pct < 1 || warn_pct > 100) back(PATH, { error: "Amber warning must be 1–100%." });
   if (pin_max_attempts === null || pin_max_attempts < 1) back(PATH, { error: "Wrong-PIN attempts must be at least 1." });
   if (pin_lock_minutes === null || pin_lock_minutes < 1) back(PATH, { error: "Lockout must be at least 1 minute." });
+  if (gst_rate === null || gst_rate < 0 || gst_rate > 1) back(PATH, { error: "GST rate must be between 0 and 1 (e.g. 0.10)." });
 
   const { error } = await supabase
     .from("settings")
-    .update({ knock_off_time, time_zone, helper_policy, warn_pct, pin_max_attempts, pin_lock_minutes })
+    .update({ knock_off_time, time_zone, helper_policy, warn_pct, pin_max_attempts, pin_lock_minutes, shop_phone, gst_rate })
     .eq("id", true);
   if (error) back(PATH, { error: friendly(error) });
   back(PATH, { ok: "Settings saved." });

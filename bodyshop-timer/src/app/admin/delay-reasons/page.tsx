@@ -1,5 +1,5 @@
 import { addReason, updateReason } from "./actions";
-import { Badge, Button, Card, Field, Flash, Input, PageHeader, td, th } from "@/components/ui";
+import { Badge, Button, Card, Field, Flash, Input, PageHeader, td, th , theadCls } from "@/components/ui";
 import { requireAdmin } from "@/lib/auth";
 import type { FlashParams } from "@/lib/flash";
 import type { DelayReason } from "@/lib/types";
@@ -26,14 +26,14 @@ export default async function DelayReasonsPage({ searchParams }: { searchParams:
 
       <Card>
         <table className="w-full text-sm">
-          <thead className="border-b border-stone-200">
+          <thead className={theadCls}>
             <tr>
               <th className={th}>Reason</th>
               <th className={th}>Active</th>
               <th className={th}></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-stone-100">
+          <tbody>
             {(data ?? []).map((r) =>
               r.system ? (
                 <tr key={r.id} className="text-stone-500">

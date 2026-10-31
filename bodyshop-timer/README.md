@@ -27,6 +27,14 @@ npm run dev                  # http://localhost:3000
    ```
    Use `'owner'` instead of `'admin'` for read-only owner access (dashboard comes in Session 5).
 
+## Workshop OS screens (docs/mockups)
+- `/admin`: Workshop floor dashboard (KPIs, repair bays, job pipeline). Header search covers rego, job # and customer.
+- `/admin/jobs/[id]`: job detail: 7-stage progress (Assess → Approve → Strip → Panel → Paint → Reassemble → QC & Ready),
+  damage scan (body-type templates in `src/lib/vehicle.ts`), photos (Supabase Storage bucket `job-photos`), estimate, activity log,
+  then **Manage job** (quote lines, details, damage, photos, tracker link, status).
+- `/track/[token]`: public customer tracker (unguessable link per job; no prices, names or claim details).
+- Stage moves forward automatically as work starts/finishes; the office uses ADVANCE STAGE / MARK COMPLETE / Back a stage.
+
 ## Set up the workshop tablet
 1. Install the board as an app: Android Chrome → ⋮ → **Install app**; iPad Safari → Share → **Add to Home Screen**.
 2. Open the installed **Job Board** app, tap **Admin sign-in**, sign in, open **Settings**, tap **Use this device as the wall board**.
@@ -47,6 +55,8 @@ supabase/migrations/…07_clock_off_and_review.sql  knock-off auto clock-off + a
 supabase/migrations/…08_schedule_clock_off.sql    pg_cron schedule (every 5 minutes)
 supabase/migrations/…09_job_substatus.sql         derived job substatus (working / paused + reason / stopped / idle)
 supabase/migrations/…10_pause_time_and_technician_report.sql  pause time capped at knock-off; per-technician timer view
+supabase/migrations/…11_workshop_os.sql        job details, stages, damage, photos, activity, tracker
+supabase/migrations/…12_photo_storage.sql      photo bucket + admin-only write policies
 supabase/seed.sql                          dev seed: technicians (PINs 1111 / 2222 / 3333), jobs, reasons. No timer history.
 supabase/tests/smoke.sql                   constraint + view checks (scratch Postgres)
 supabase/tests/kiosk.sql                   clock-rule checks (scratch Postgres)
@@ -54,4 +64,5 @@ supabase/tests/review.sql                  auto clock-off + review checks (scrat
 supabase/tests/substatus.sql               job substatus checks
 supabase/tests/technician_report.sql       pause-time capping + technician report view
 supabase/tests/demo_history.sql            demo timers loaded by smoke.sql only
+supabase/tests/workshop_os.sql             job numbers, stage automation, activity, tracker
 ```

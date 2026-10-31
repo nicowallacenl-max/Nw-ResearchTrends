@@ -1,5 +1,5 @@
 import { createTechnician, setPin, updateTechnician } from "./actions";
-import { Badge, Button, Card, Field, Flash, Input, PageHeader, td, th } from "@/components/ui";
+import { Badge, Button, Card, Field, Flash, Input, PageHeader, td, th , theadCls } from "@/components/ui";
 import { requireAdmin } from "@/lib/auth";
 import type { FlashParams } from "@/lib/flash";
 import { PROCEDURE_LABEL, PROCEDURES, type Technician } from "@/lib/types";
@@ -63,7 +63,7 @@ export default async function TechniciansPage({ searchParams }: { searchParams: 
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="border-b border-stone-200">
+              <thead className={theadCls}>
                 <tr>
                   <th className={th}>Name</th>
                   <th className={`${th} w-28`}>$/h</th>
@@ -73,7 +73,7 @@ export default async function TechniciansPage({ searchParams }: { searchParams: 
                   <th className={th}>Change PIN</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-stone-100">
+              <tbody>
                 {techs.map((t) => {
                   const fid = `tech-${t.id}`;
                   const locked = t.locked_until && new Date(t.locked_until).getTime() > now;

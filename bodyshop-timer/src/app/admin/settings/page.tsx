@@ -1,5 +1,5 @@
 import { pairThisDevice, revokeDevice, saveSettings } from "./actions";
-import { Badge, Button, Card, Field, Flash, Input, PageHeader, Select, td, th } from "@/components/ui";
+import { Badge, Button, Card, Field, Flash, Input, PageHeader, Select, td, th , theadCls } from "@/components/ui";
 import { requireAdmin } from "@/lib/auth";
 import type { FlashParams } from "@/lib/flash";
 import { HELPER_POLICY_LABEL, type Settings } from "@/lib/types";
@@ -28,6 +28,12 @@ export default async function SettingsPage({ searchParams }: { searchParams: Fla
             </Field>
             <Field label="Shop time zone">
               <Input name="time_zone" defaultValue={s.time_zone} required />
+            </Field>
+            <Field label="Shop phone (customer tracker “Call shop”)">
+              <Input name="shop_phone" type="tel" defaultValue={s.shop_phone ?? ""} placeholder="e.g. 07 5527 7175" />
+            </Field>
+            <Field label="GST rate">
+              <Input name="gst_rate" type="number" step="0.01" min="0" max="1" defaultValue={s.gst_rate ?? 0.1} required />
             </Field>
           </div>
         </Card>
@@ -85,8 +91,9 @@ export default async function SettingsPage({ searchParams }: { searchParams: Fla
             <Button type="submit">Use this device as the wall board</Button>
           </form>
           {!!devices?.length && (
-            <table className="w-full text-sm">
-              <thead className="border-b border-stone-200">
+            <div className="overflow-x-auto">
+            <table className="w-full min-w-[520px] text-sm">
+              <thead className={theadCls}>
                 <tr>
                   <th className={th}>Device</th>
                   <th className={th}>Paired</th>
@@ -94,7 +101,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Fla
                   <th className={th}></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-stone-100">
+              <tbody>
                 {devices.map((d) => (
                   <tr key={d.id} className={d.revoked_at ? "text-stone-400" : ""}>
                     <td className={td}>{d.name}</td>
@@ -114,6 +121,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Fla
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </Card>
       </div>

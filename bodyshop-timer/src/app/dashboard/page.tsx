@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { QuotedVsActual, SingleBars } from "./Charts";
-import { Card, PageHeader, td, th } from "@/components/ui";
+import { Card, PageHeader, td, th , theadCls } from "@/components/ui";
 import { requireStaff } from "@/lib/auth";
 import { PROCEDURE_LABEL, PROCEDURES, type Procedure } from "@/lib/types";
 
@@ -16,10 +16,10 @@ function TableToggle({ head, rows }: { head: string[]; rows: (string | number)[]
     <details className="mt-3 text-sm">
       <summary className="cursor-pointer text-stone-500 hover:text-stone-800">Show as table</summary>
       <table className="mt-2 w-full">
-        <thead className="border-b border-stone-200">
+        <thead className={theadCls}>
           <tr>{head.map((x, i) => <th key={x} className={`${th} ${i ? "text-right" : ""}`}>{x}</th>)}</tr>
         </thead>
-        <tbody className="divide-y divide-stone-100">
+        <tbody>
           {rows.map((r) => (
             <tr key={String(r[0])}>{r.map((c, i) => <td key={i} className={`${td} ${i ? "text-right tabular-nums" : ""}`}>{c}</td>)}</tr>
           ))}
@@ -31,9 +31,9 @@ function TableToggle({ head, rows }: { head: string[]; rows: (string | number)[]
 
 function Stat({ label, value, note }: { label: string; value: string; note?: string }) {
   return (
-    <div className="rounded-lg border border-stone-200 bg-white p-4 shadow-sm">
-      <div className="text-sm text-stone-500">{label}</div>
-      <div className="mt-1 text-3xl font-semibold tabular-nums">{value}</div>
+    <div className="cut flex flex-col gap-2 border border-line bg-bg px-5 py-4">
+      <div className="font-mono text-[11px] uppercase tracking-[.14em] text-muted">{label}</div>
+      <div className="font-display text-[40px] font-bold leading-none tabular-nums">{value}</div>
       {note && <div className="mt-1 text-xs text-stone-500">{note}</div>}
     </div>
   );
@@ -79,7 +79,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
 
   return (
     <>
-      <PageHeader title="Owner dashboard" />
+      <PageHeader eyebrow="// REPORTS" title="Owner dashboard" />
 
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat label="Completed items: actual vs quoted" value={doneQuoted ? `${Math.round((doneActual / doneQuoted) * 100)}%` : "–"}
@@ -134,7 +134,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
           <p className="text-sm text-stone-500">No helper time logged yet.</p>
         ) : (
           <table className="w-full text-sm">
-            <thead className="border-b border-stone-200">
+            <thead className={theadCls}>
               <tr>
                 <th className={th}>Reason</th>
                 <th className={th}>Procedure</th>
@@ -145,7 +145,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
                 <th className={`${th} text-right`}>Cost</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-stone-100">
+            <tbody>
               {[...helpers].sort((a, b) => n(b.helper_hours) - n(a.helper_hours)).map((r) => (
                 <tr key={`${r.helper_reason}-${r.procedure}-${r.owner_name}`}>
                   <td className={td}>{r.helper_reason}</td>
