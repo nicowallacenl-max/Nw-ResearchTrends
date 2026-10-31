@@ -1,10 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Board } from "./Board";
 import { kioskDb, kioskKey, type BoardData } from "@/lib/kiosk";
+import { Logo } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Wall board · Bodyshop Job Timer" };
-export const viewport: Viewport = { themeColor: "#0c0a09", width: "device-width", initialScale: 1, maximumScale: 1, userScalable: false };
+export const viewport: Viewport = { themeColor: "#ffffff", width: "device-width", initialScale: 1, maximumScale: 1, userScalable: false };
 
 export default async function BoardPage() {
   const key = await kioskKey();
@@ -12,18 +13,19 @@ export default async function BoardPage() {
 
   if (!data?.ok) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-stone-950 p-8 text-center text-stone-100">
-        <div className="max-w-lg">
-          <h1 className="mb-4 text-3xl font-bold">Wall board not set up</h1>
+      <main className="ab-shell grid-bg flex min-h-screen items-center justify-center p-8 text-center text-ink">
+        <div className="cut flex max-w-lg flex-col items-center gap-4 border border-line bg-bg p-8">
+          <Logo />
+          <h1 className="m-0 font-display text-[28px] font-bold uppercase tracking-[.06em]">Wall board not set up</h1>
           {error ? (
-            <p className="text-lg text-red-300">Can&apos;t reach the database right now. Check the internet connection and reload.</p>
+            <p className="text-[16px] text-progress">Can&apos;t reach the database right now. Check the internet connection and reload.</p>
           ) : (
-            <p className="text-lg text-stone-300">
+            <p className="text-[16px] text-body">
               This device isn&apos;t paired yet. An admin signs in on this tablet, opens <b>Settings</b>, and taps{" "}
               <b>Use this device as the wall board</b>.
             </p>
           )}
-          <a href="/login" className="mt-8 inline-block rounded-xl bg-orange-700 px-8 py-4 text-xl font-semibold">Admin sign-in</a>
+          <a href="/login" className="plain cut-sm mt-2 inline-flex min-h-16 items-center bg-neon px-8 font-display text-[18px] font-bold uppercase tracking-[.1em] text-on-neon no-underline">Admin sign-in</a>
         </div>
       </main>
     );
