@@ -6,6 +6,8 @@ import { requireAdmin } from "@/lib/auth";
 import { back, friendly } from "@/lib/flash";
 import { num, optStr, str } from "@/lib/form";
 import { PROCEDURES, type Procedure } from "@/lib/types";
+import { COMPLETE } from "@/lib/stages";
+import { BODY_TYPES, DAMAGE_TYPES, SEVERITIES, type BodyType } from "@/lib/vehicle";
 
 function jobFields(form: FormData) {
   return {
@@ -15,15 +17,24 @@ function jobFields(form: FormData) {
     colour: optStr(form, "colour"),
     ibodyshop_ref: optStr(form, "ibodyshop_ref"),
     photo_url: optStr(form, "photo_url"),
+    body_type: (BODY_TYPES as readonly string[]).includes(str(form, "body_type")) ? (str(form, "body_type") as BodyType) : "sedan",
+    vin: optStr(form, "vin")?.toUpperCase() ?? null,
+    bay: optStr(form, "bay"),
+    eta: optStr(form, "eta"),
+    customer_name: optStr(form, "customer_name"),
+    customer_phone: optStr(form, "customer_phone"),
+    insurer: optStr(form, "insurer"),
+    claim_number: optStr(form, "claim_number"),
+    work_summary: optStr(form, "work_summary"),
   };
 }
 
 export async function createJob(form: FormData) {
   const { supabase } = await requireAdmin();
   const fields = jobFields(form);
-  if (!fields.rego) back("/admin/jobs", { error: "Rego is required." });
+  if (!fields.rego) back("/admin/jobs/new", { error: "Rego is required." });
   const { data, error } = await supabase.from("jobs").insert(fields).select("id").single();
-  if (error) back("/admin/jobs", { error: friendly(error) });
+  if (error) back("/admin/jobs/new", { error: friendly(error) });
   redirect(`/admin/jobs/${data.id}?ok=${encodeURIComponent("Job created. Now add its quote lines.")}`);
 }
 
@@ -67,6 +78,7 @@ function lineFields(form: FormData) {
     procedure,
     quoted_hours: num(form, "quoted_hours"),
     assigned_technician_id: optStr(form, "assigned_technician_id"),
+    price: num(form, "price"), // ex GST; empty = not priced yet
   };
 }
 
@@ -74,6 +86,7 @@ function validateLine(path: string, f: ReturnType<typeof lineFields>) {
   if (!f.description) back(path, { error: "Description is required." });
   if (!PROCEDURES.includes(f.procedure)) back(path, { error: "Pick a procedure." });
   if (f.quoted_hours === null || f.quoted_hours < 0) back(path, { error: "Quoted hours must be 0 or more." });
+  if (f.price !== null && f.price < 0) back(path, { error: "Price can't be negative." });
 }
 
 export async function addLine(form: FormData) {
@@ -154,4 +167,80 @@ export async function autoAssign(form: FormData) {
   back(path, skipped.length
     ? { error: `Assigned what I could. No active technician does: ${[...new Set(skipped)].join(", ")}.` }
     : { ok: `Assigned ${lines.length} line${lines.length === 1 ? "" : "s"}.` });
+}
+
+
+// ---------------------------------------------------------------- Workshop OS: stage, collection, damage, photos
+
+// "ADVANCE STAGE" / "MARK COMPLETE" on the job page.
+export async function advanceStage(form: FormData) {
+  const { supabase } = await requireAdmin();
+  const id = str(form, "id");
+  const { data: job } = await supabase.from("jobs").select("stage").eq("id", id).single();
+  if (!job || job.stage >= COMPLETE) back(`/admin/jobs/${id}`, { error: "This job is already complete." });
+  const { error } = await supabase.from("jobs").update({ stage: job.stage + 1 }).eq("id", id);
+  if (error) back(`/admin/jobs/${id}`, { error: friendly(error) });
+  back(`/admin/jobs/${id}`, { ok: job.stage + 1 >= COMPLETE ? "Job complete · ready to collect." : "Stage advanced." });
+}
+
+// Correction: move the job back one stage (e.g. advanced by mistake, or QC failed).
+export async function stageBack(form: FormData) {
+  const { supabase } = await requireAdmin();
+  const id = str(form, "id");
+  const { data: job } = await supabase.from("jobs").select("stage").eq("id", id).single();
+  if (!job || job.stage <= 0) back(`/admin/jobs/${id}`, { error: "Already at the first stage." });
+  const { error } = await supabase.from("jobs").update({ stage: job.stage - 1 }).eq("id", id);
+  if (error) back(`/admin/jobs/${id}`, { error: friendly(error) });
+  back(`/admin/jobs/${id}`, { ok: "Moved back a stage." });
+}
+
+export async function markCollected(form: FormData) {
+  const { supabase } = await requireAdmin();
+  const id = str(form, "id");
+  const { error } = await supabase.from("jobs").update({ collected_at: new Date().toISOString(), stage: COMPLETE }).eq("id", id);
+  if (error) back(`/admin/jobs/${id}`, { error: friendly(error) });
+  back(`/admin/jobs/${id}`, { ok: "Marked as collected. The job leaves the workshop dashboard." });
+}
+
+export async function addDamage(form: FormData) {
+  const { supabase } = await requireAdmin();
+  const jobId = str(form, "job_id");
+  const path = `/admin/jobs/${jobId}`;
+  const panel = str(form, "panel"), type = str(form, "type"), severity = str(form, "severity") || "moderate";
+  if (!panel) back(path, { error: "Pick a panel." });
+  if (!(DAMAGE_TYPES as readonly string[]).includes(type)) back(path, { error: "Pick a damage type." });
+  if (!(SEVERITIES as readonly string[]).includes(severity)) back(path, { error: "Pick a severity." });
+  const { error } = await supabase.from("job_damage").insert({ job_id: jobId, panel, type, severity, note: optStr(form, "note") });
+  if (error) back(path, { error: friendly(error) });
+  back(path, { ok: "Damage added." });
+}
+
+export async function deleteDamage(form: FormData) {
+  const { supabase } = await requireAdmin();
+  const path = `/admin/jobs/${str(form, "job_id")}`;
+  const { error } = await supabase.from("job_damage").delete().eq("id", str(form, "id"));
+  if (error) back(path, { error: friendly(error) });
+  back(path, { ok: "Damage removed." });
+}
+
+// Called by the browser after it uploads the file straight to Supabase Storage (keeps big phone photos off the server).
+export async function recordPhoto(input: { jobId: string; path: string; caption: string; damageId: string | null }) {
+  const { supabase } = await requireAdmin();
+  if (!input.path.startsWith(`${input.jobId}/`)) return { ok: false, error: "Bad photo path." };
+  const { error } = await supabase.from("job_photos").insert({ job_id: input.jobId, path: input.path, caption: input.caption || null, damage_id: input.damageId });
+  if (error) return { ok: false, error: friendly(error) };
+  await supabase.from("job_events").insert({ job_id: input.jobId, kind: "photo", message: `Photo added${input.caption ? ` · ${input.caption}` : ""}` });
+  revalidatePath(`/admin/jobs/${input.jobId}`);
+  return { ok: true };
+}
+
+export async function deletePhoto(form: FormData) {
+  const { supabase } = await requireAdmin();
+  const jobId = str(form, "job_id");
+  const path = `/admin/jobs/${jobId}`;
+  const { data: photo } = await supabase.from("job_photos").select("path").eq("id", str(form, "id")).single();
+  if (photo) await supabase.storage.from("job-photos").remove([photo.path]);
+  const { error } = await supabase.from("job_photos").delete().eq("id", str(form, "id"));
+  if (error) back(path, { error: friendly(error) });
+  back(path, { ok: "Photo removed." });
 }

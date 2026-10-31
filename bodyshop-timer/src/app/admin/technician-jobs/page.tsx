@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Card, PageHeader, td, th } from "@/components/ui";
+import { Card, PageHeader, td, th , theadCls } from "@/components/ui";
 import { requireAdmin } from "@/lib/auth";
 import { PERIOD_LABEL, periodStart, showTime, type Period } from "@/lib/time";
 
@@ -76,7 +76,7 @@ export default async function TechnicianJobsPage({ searchParams }: { searchParam
       <Card>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="border-b border-stone-200">
+            <thead className={theadCls}>
               <tr>
                 <th className={th}>Technician</th>
                 <th className={`${th} text-right`}>Jobs worked</th>

@@ -59,6 +59,8 @@ export type Settings = {
   pin_max_attempts: number;
   pin_lock_minutes: number;
   warn_pct: number;
+  shop_phone: string | null;
+  gst_rate: number;
 };
 
 // Job substatus, derived from the timers (v_job_substatus).
@@ -92,3 +94,10 @@ export function durationSince(iso: string | null, now = Date.now()) {
   const d = Math.floor(mins / 1440), h = Math.floor((mins % 1440) / 60), m = mins % 60;
   return d ? `${d}d ${h}h` : h ? `${h}h ${m}m` : `${m}m`;
 }
+
+// Workshop OS job fields (migration 11).
+export type JobFull = Job & {
+  job_number: string | null; bay: string | null; customer_name: string | null; customer_phone: string | null;
+  insurer: string | null; claim_number: string | null; vin: string | null; body_type: import("./vehicle").BodyType;
+  eta: string | null; work_summary: string | null; stage: number; track_token: string; collected_at: string | null;
+};

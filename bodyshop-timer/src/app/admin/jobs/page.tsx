@@ -1,19 +1,19 @@
 import Link from "next/link";
-import { createJob } from "./actions";
-import { JobFields } from "./JobFields";
-import { Badge, Button, Card, Flash, PageHeader, td, th } from "@/components/ui";
+import { Badge, Button, Card, Flash, PageHeader, td, th , theadCls } from "@/components/ui";
 import { requireAdmin } from "@/lib/auth";
 import { JOB_STATUS_LABEL, SUBSTATUS_TONE, durationSince, substatusLabel, type JobStatus, type JobSubstatus } from "@/lib/types";
 
 const COLOUR_TONE = { green: "green", amber: "amber", red: "red" } as const;
 const fmt = (n: number | null) => (n === null ? "–" : Number(n).toFixed(1));
 
-export default async function JobsPage({ searchParams }: { searchParams: Promise<{ error?: string; ok?: string; show?: string }> }) {
-  const { error, ok, show } = await searchParams;
+export default async function JobsPage({ searchParams }: { searchParams: Promise<{ error?: string; ok?: string; show?: string; q?: string }> }) {
+  const { error, ok, show, q: query } = await searchParams;
   const { supabase } = await requireAdmin();
 
-  let q = supabase.from("jobs").select("id, rego, make, model, colour, ibodyshop_ref, status, created_at").order("created_at", { ascending: false });
-  if (show !== "all") q = q.neq("status", "done");
+  let q = supabase.from("jobs").select("id, job_number, rego, make, model, colour, ibodyshop_ref, status, created_at").order("created_at", { ascending: false });
+  if (show !== "all" && !query) q = q.neq("status", "done");
+  const term = (query ?? "").trim().replace(/[,%()]/g, " ");
+  if (term) q = q.or(`rego.ilike.%${term}%,job_number.ilike.%${term}%,customer_name.ilike.%${term}%,make.ilike.%${term}%,model.ilike.%${term}%`);
   const now = Date.now();
   const [{ data: allJobs }, { data: summary }, { data: subs }] = await Promise.all([
     q,
@@ -27,7 +27,7 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
 
   return (
     <>
-      <PageHeader title="Jobs">
+      <PageHeader eyebrow={term ? `// SEARCH · ${term.toUpperCase()}` : "// JOBS"} title="Jobs">
         <div className="flex gap-2 text-sm">
           <Link href="/admin/jobs" className={!show ? "font-semibold" : "text-stone-500"}>Active</Link>
           <span className="text-stone-300">|</span>
@@ -40,23 +40,16 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
       </PageHeader>
       <Flash error={error} ok={ok} />
 
-      <Card title="New job">
-        <form key={String(Date.now())} action={createJob} className="flex flex-col gap-4">
-          <JobFields />
-          <div>
-            <Button type="submit">Create job</Button>
-          </div>
-        </form>
-      </Card>
 
       <Card>
         {!jobs?.length ? (
-          <p className="text-sm text-stone-500">{show === "paused" ? "No paused jobs." : "No jobs yet."}</p>
+          <p className="text-muted">{term ? `No jobs match “${term}”.` : show === "paused" ? "No paused jobs." : "No jobs yet."}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="border-b border-stone-200">
+              <thead className={theadCls}>
                 <tr>
+                  <th className={th}>Job #</th>
                   <th className={th}>Rego</th>
                   <th className={th}>Vehicle</th>
                   <th className={th}>iBodyshop</th>
@@ -67,11 +60,12 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
                   <th className={th}></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-stone-100">
+              <tbody>
                 {jobs.map((j) => {
                   const s = byJob.get(j.id);
                   return (
                     <tr key={j.id} className="hover:bg-stone-50">
+                      <td className={`${td} font-mono`}><Link href={`/admin/jobs/${j.id}`}>{j.job_number}</Link></td>
                       <td className={`${td} font-mono font-semibold`}>
                         <Link href={`/admin/jobs/${j.id}`} className="hover:text-brand">{j.rego}</Link>
                       </td>
