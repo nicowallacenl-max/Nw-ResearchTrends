@@ -21,4 +21,16 @@ do $$ declare b jsonb; j jsonb; k text := current_setting('my.key'); begin
   assert kiosk_job('bad-key-bad-key-bad-key-bad-key-bad-key', '00000000-0000-0000-0000-0000000000c1')->>'error' = 'not_paired', 'bad key';
 end $$;
 reset role;
+-- complete while not clocked on -> activity line
+set role anon;
+do $$ declare k text := current_setting('my.key'); r jsonb; begin
+  r := kiosk_start(k, '00000000-0000-0000-0000-0000000000b3', '3333', '00000000-0000-0000-0000-0000000001f1');
+  assert (r->>'ok')::boolean, 'start: ' || r::text;
+  r := kiosk_pause(k, '00000000-0000-0000-0000-0000000000b3', '3333', '00000000-0000-0000-0000-0000000000a1');
+  r := kiosk_complete(k, '00000000-0000-0000-0000-0000000000b3', '3333', '00000000-0000-0000-0000-0000000001f1');
+  assert (r->>'ok')::boolean, 'complete: ' || r::text;
+  assert exists (select 1 from jsonb_array_elements(kiosk_job(k, '00000000-0000-0000-0000-0000000000c3')->'activity') e
+                 where e->>'message' like 'Tom% completed Tailgate - repair'), 'completion logged';
+end $$;
+reset role;
 \echo ALL KIOSK JOB TESTS PASSED

@@ -126,8 +126,9 @@ export async function reopenLine(form: FormData) {
   const { supabase } = await requireAdmin();
   const jobId = str(form, "job_id");
   const path = `/admin/jobs/${jobId}`;
-  const { error } = await supabase.from("quote_lines").update({ completed_at: null }).eq("id", str(form, "id"));
+  const { data: line, error } = await supabase.from("quote_lines").update({ completed_at: null }).eq("id", str(form, "id")).select("description").single();
   if (error) back(path, { error: friendly(error) });
+  await supabase.from("job_events").insert({ job_id: jobId, kind: "line_reopened", message: `Office reopened ${line.description}` });
   // A job with an open line can't be "done".
   await supabase.from("jobs").update({ status: "in_progress" }).eq("id", jobId).eq("status", "done");
   back(path, { ok: "Quote line reopened." });
