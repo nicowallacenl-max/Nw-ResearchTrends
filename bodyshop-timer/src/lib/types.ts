@@ -61,6 +61,7 @@ export type Settings = {
   warn_pct: number;
   shop_phone: string | null;
   gst_rate: number;
+  board_show_timers: boolean;
 };
 
 // Job substatus, derived from the timers (v_job_substatus).

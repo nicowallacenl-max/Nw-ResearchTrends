@@ -325,7 +325,7 @@ function JobTile({ job, data, now, name, onOpen }: { job: BoardJob; data: BoardD
         ) : (
           running.map((r) => (
             <span key={r.id} className={`cut-sm px-3 py-1.5 font-mono text-[14px] font-medium ${r.role === "owner" ? "bg-complete text-white" : "bg-neon text-on-neon"}`}>
-              {r.role === "helper" && "+1 "}{firstName(name(r.technician_id))} · {elapsed(r.started_at, now)}
+              {r.role === "helper" && "+1 "}{firstName(name(r.technician_id))} · {timer(data, r.started_at, now)}
             </span>
           ))
         )}
@@ -462,7 +462,7 @@ function JobView({
                           {r.role === "helper" && <span className="cut-sm mr-2 bg-neon px-2 font-mono text-[13px] text-on-neon">+1</span>}
                           {name(r.technician_id)}
                         </span>
-                        <span className="font-mono text-[22px] tabular-nums text-accent">{elapsed(r.started_at, now)}</span>
+                        <span className="font-mono text-[22px] tabular-nums text-accent">{timer(data, r.started_at, now)}</span>
                         <div className="ml-auto flex gap-3">
                           <BigButton tone="hazard" onClick={() => onPause(r.technician_id)}>Pause</BigButton>
                           {r.role === "owner" && <BigButton tone="complete" onClick={() => onComplete(line.id, r.technician_id)}>Complete</BigButton>}
@@ -533,7 +533,7 @@ function MyWork({
           <div className="font-mono text-[12px] uppercase tracking-[.14em] text-muted">Clocked on now{mine.role === "helper" ? " · helping" : ""}</div>
           <div className="mt-1 flex flex-wrap items-center gap-3">
             <span className="font-display text-[22px] font-semibold">{current.job.rego} · {current.line.description}</span>
-            <span className="font-mono text-[26px] tabular-nums text-accent">{elapsed(mine.started_at, now)}</span>
+            <span className="font-mono text-[26px] tabular-nums text-accent">{timer(data, mine.started_at, now)}</span>
             <div className="ml-auto flex gap-3">
               <BigButton tone="hazard" onClick={onPause}>Pause</BigButton>
               {mine.role === "owner" && <BigButton tone="complete" onClick={() => onComplete(current.line.id)}>Complete</BigButton>}
@@ -686,6 +686,9 @@ function elapsed(startedAt: string, now: number) {
   const m = Math.floor((s % 3600) / 60);
   return h ? `${h}:${String(m).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}` : `${m}:${String(s % 60).padStart(2, "0")}`;
 }
+
+// Live running clock, unless the office has switched timers off for the board (Settings). Time is recorded either way.
+const timer = (data: BoardData, startedAt: string, now: number) => (data.settings.show_timers === false ? "ON IT" : elapsed(startedAt, now));
 
 const hrs = (n: number) => Number(n ?? 0).toFixed(1);
 const firstName = (n: string) => n.split(/[\s(]/)[0];

@@ -35,7 +35,7 @@ export async function saveSettings(form: FormData) {
 
   const { error } = await supabase
     .from("settings")
-    .update({ knock_off_time, time_zone, helper_policy, warn_pct, pin_max_attempts, pin_lock_minutes, shop_phone, gst_rate })
+    .update({ knock_off_time, time_zone, helper_policy, warn_pct, pin_max_attempts, pin_lock_minutes, shop_phone, gst_rate, board_show_timers: form.get("board_show_timers") === "on" })
     .eq("id", true);
   if (error) back(PATH, { error: friendly(error) });
   back(PATH, { ok: "Settings saved." });

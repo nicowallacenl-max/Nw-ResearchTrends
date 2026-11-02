@@ -159,6 +159,10 @@ export default async function JobPage({ params, searchParams }: { params: Promis
           <DamageScan body={job.body_type} damage={dmg}
             title={`Top-down ${job.body_type.replace(/_/g, " ")} outline${dmg.length ? ` with ${dmg.map((d) => `${panelLabel(job.body_type, d.panel)} (${d.type})`).join(", ")} flagged as damaged` : ", no damage recorded"}`} />
           <PhotoGallery photos={pics.map((p) => ({ url: photoUrl(p.path), caption: p.caption ?? "" }))} />
+          <a href="#photos" className={`${buttonCls("secondary")} plain self-start no-underline`}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+            Add photos
+          </a>
         </section>
 
         <div className="flex min-w-0 flex-[1_1_420px] flex-col gap-6">
@@ -294,7 +298,7 @@ export default async function JobPage({ params, searchParams }: { params: Promis
           <p className="mt-3 text-[12px] text-muted">Panels follow the body type set in Job details ({job.body_type.replace(/_/g, " ")}).</p>
         </Card>
 
-        <Card title="Photos" className="min-w-0 flex-[1_1_420px]">
+        <Card title="Photos" id="photos" className="min-w-0 flex-[1_1_420px]">
           <PhotoUpload jobId={job.id} damage={dmg.map((d) => ({ id: d.id, label: `${panelLabel(job.body_type, d.panel)} · ${d.type}` }))} />
           {pics.length > 0 && (
             <ul className="mt-4 flex list-none flex-col p-0">
