@@ -24,8 +24,8 @@ type Line = QuoteLine & { price: number | null };
 type Activity = { at: string; kind: string; message: string };
 type PhotoRow = { id: string; path: string; caption: string | null; damage_id: string | null };
 
-const STATE_TONE = { done: "stone", locked: "amber", running: "green", ready: "blue" } as const;
-const STATE_LABEL = { done: "Done", locked: "Locked", running: "Running", ready: "Ready" } as const;
+const STATE_TONE = { done: "stone", locked: "stone", running: "green", ready: "blue", paused: "amber" } as const;
+const STATE_LABEL = { done: "Done", locked: "Locked", running: "Running", ready: "Ready", paused: "Paused" } as const;
 const rowKey = (r: object) => JSON.stringify(r); // uncontrolled rows redraw after a save
 const money = (n: number) => n.toLocaleString("en-AU", { style: "currency", currency: "AUD" });
 

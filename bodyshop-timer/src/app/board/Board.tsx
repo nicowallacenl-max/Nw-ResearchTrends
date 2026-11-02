@@ -27,6 +27,7 @@ const ERRORS: Record<string, string> = {
   inactive: "This person isn't set up as an active technician.",
   not_paired: "This tablet isn't paired any more. Ask the office to set it up again.",
   line_locked: "This step is locked until the step before it is complete.",
+  line_paused: "This item is paused. Resume it first, then complete it.",
   line_done: "This item is already complete.",
   already_running: "You're already clocked on to this.",
   helpers_not_allowed: "Helpers aren't allowed on someone else's item. Ask the office.",
@@ -144,7 +145,7 @@ export function Board({ data }: { data: BoardData }) {
     }
     run(
       () => startWork({ techId: f.techId!, pin, lineId: f.lineId, helperReason: f.helperReason, approverPin }),
-      (r) => `${name(f.techId)} clocked on${r.role === "helper" ? " as helper" : ""}: ${line.description}` + (r.switched_from ? ` (paused ${r.switched_from})` : ""),
+      (r) => `${name(f.techId)} ${line.state === "paused" ? "resumed" : "clocked on"}${r.role === "helper" ? " as helper" : ""}: ${line.description}` + (r.switched_from ? ` (paused ${r.switched_from})` : ""),
       // Wrong own PIN: stay on the PIN pad. Wrong owner PIN: retry approval. Anything else: back to the job.
       (r) => (r.error === "wrong_pin" ? { ...f, step: "pin" } : r.error?.startsWith("owner_") ? { ...f, pin, step: "approver" } : backTo(f.jobId)),
       f.jobId,
@@ -217,7 +218,7 @@ export function Board({ data }: { data: BoardData }) {
         if (flow.step === "who") {
           const onLine = data.running.filter((r) => r.line_id === line.id);
           return (
-            <Sheet title={`Who's ${ownerOn(line, onLine) ? "helping on" : "starting"} “${line.description}”?`} onClose={back}>
+            <Sheet title={`Who's ${line.state === "paused" ? "resuming" : ownerOn(line, onLine) ? "helping on" : "starting"} “${line.description}”?`} onClose={back}>
               <WhoPicker
                 data={data}
                 exclude={onLine.map((r) => r.technician_id)}
@@ -344,7 +345,7 @@ function JobTile({ job, data, now, name, onOpen }: { job: BoardJob; data: BoardD
 
 // ------------------------------------------------------------------ job view (JobDetail mockup, for the floor)
 
-const LINE_CHIP: Record<BoardLine["state"], "green" | "neon" | "stone" | "amber"> = { done: "green", running: "neon", ready: "stone", locked: "stone" };
+const LINE_CHIP: Record<BoardLine["state"], "green" | "neon" | "stone" | "amber"> = { done: "green", running: "neon", ready: "stone", locked: "stone", paused: "amber" };
 
 function JobView({
   job, data, now, name, onClose, onStart, onPause, onComplete,
@@ -446,7 +447,7 @@ function JobView({
               {job.lines.map((line) => {
                 const onLine = data.running.filter((r) => r.line_id === line.id);
                 const over = line.quoted_hours > 0 && line.actual_hours > line.quoted_hours;
-                const canWork = line.state === "ready" || line.state === "running";
+                const canWork = line.state === "ready" || line.state === "running"; // paused lines only offer RESUME
                 return (
                   <div key={line.id} className={`border-b border-divider pb-3 ${line.state === "locked" ? "opacity-55" : ""}`}>
                     <div className="flex flex-wrap items-center gap-3">
@@ -459,6 +460,13 @@ function JobView({
                       {line.state === "locked" && " · waiting for the step before"}
                       {line.state === "done" && " · complete"}
                     </div>
+                    {/* Paused: just the state and RESUME. The reason, who and when are in the activity log. */}
+                    {line.state === "paused" && onLine.length === 0 && (
+                      <div className="mt-3 flex flex-wrap items-center gap-3">
+                        <Chip tone="amber">Paused</Chip>
+                        <BigButton tone="hazard" onClick={() => onStart(line.id)}>Resume</BigButton>
+                      </div>
+                    )}
                     {onLine.map((r) => (
                       <div key={r.id} className="cut-sm mt-3 flex flex-wrap items-center gap-3 border border-line bg-bg-subtle px-4 py-2.5">
                         <span className="font-display text-[18px] font-semibold">
@@ -555,7 +563,7 @@ function MyWork({
             <Chip tone={LINE_CHIP[line.state]}>{PROC[line.procedure]}</Chip>
             <span className="font-mono text-[20px] font-medium">{job.rego}</span>
             <span className="font-display text-[19px] font-semibold">{line.description}</span>
-            <span className="ml-auto font-mono text-[14px] text-muted">{locked ? "LOCKED" : isCurrent ? "RUNNING" : `${hrs(line.actual_hours)} / ${hrs(line.quoted_hours)} H  ▶`}</span>
+            <span className="ml-auto font-mono text-[14px] text-muted">{locked ? "LOCKED" : isCurrent ? "RUNNING" : line.state === "paused" ? "PAUSED · RESUME ▶" : `${hrs(line.actual_hours)} / ${hrs(line.quoted_hours)} H  ▶`}</span>
           </button>
         );
       })}

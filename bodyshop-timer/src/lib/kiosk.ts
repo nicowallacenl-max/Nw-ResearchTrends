@@ -65,6 +65,6 @@ export type BoardLine = {
   procedure: "strip" | "repair" | "prep" | "paint" | "refit";
   quoted_hours: number;
   owner_id: string | null;
-  state: "ready" | "locked" | "running" | "done";
+  state: "ready" | "locked" | "running" | "paused" | "done";
   actual_hours: number;
 };
