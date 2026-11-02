@@ -214,10 +214,12 @@ export function Board({ data }: { data: BoardData }) {
         if (!line) return null;
         const back = () => setFlow(backTo(flow.jobId));
         if (flow.step === "who") {
+          const onLine = data.running.filter((r) => r.line_id === line.id);
           return (
-            <Sheet title={`Who's starting “${line.description}”?`} onClose={back}>
+            <Sheet title={`Who's ${ownerOn(line, onLine) ? "helping on" : "starting"} “${line.description}”?`} onClose={back}>
               <WhoPicker
                 data={data}
+                exclude={onLine.map((r) => r.technician_id)}
                 ownerId={line.owner_id}
                 procedure={line.procedure}
                 onPick={(techId) => {
@@ -471,7 +473,7 @@ function JobView({
                     ))}
                     {canWork && (
                       <div className="mt-3 flex flex-wrap gap-3">
-                        <BigButton tone="neon" onClick={() => onStart(line.id)}>{onLine.length ? "Start / help" : "Start"}</BigButton>
+                        <BigButton tone="neon" onClick={() => onStart(line.id)}>{ownerOn(line, onLine) ? "Help" : "Start"}</BigButton>
                         {line.owner_id && !onLine.some((r) => r.technician_id === line.owner_id) && (
                           <BigButton tone="complete" onClick={() => onComplete(line.id, line.owner_id!)}>Complete</BigButton>
                         )}
@@ -562,10 +564,10 @@ function MyWork({
 
 // ------------------------------------------------------------------ pickers, PIN pad, primitives
 
-function WhoPicker({ data, ownerId, procedure, onPick }: { data: BoardData; ownerId?: string | null; procedure?: string; onPick: (techId: string) => void }) {
-  // Owner first, then people who do this procedure, then everyone else.
+function WhoPicker({ data, ownerId, procedure, exclude = [], onPick }: { data: BoardData; ownerId?: string | null; procedure?: string; exclude?: string[]; onPick: (techId: string) => void }) {
+  // Owner first, then people who do this procedure, then everyone else. People already clocked on to this line aren't offered.
   const rank = (t: BoardData["technicians"][number]) => (t.id === ownerId ? 0 : procedure && t.procedures.includes(procedure) ? 1 : 2);
-  const techs = [...data.technicians].sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
+  const techs = data.technicians.filter((t) => !exclude.includes(t.id)).sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
   return (
     <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
       {techs.map((t) => (
@@ -686,6 +688,9 @@ function elapsed(startedAt: string, now: number) {
   const m = Math.floor((s % 3600) / 60);
   return h ? `${h}:${String(m).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}` : `${m}:${String(s % 60).padStart(2, "0")}`;
 }
+
+// The owner is already clocked on to this line, so the next action for anyone else is to help.
+const ownerOn = (line: BoardLine, onLine: BoardData["running"]) => !!line.owner_id && onLine.some((r) => r.technician_id === line.owner_id);
 
 // Live running clock, unless the office has switched timers off for the board (Settings). Time is recorded either way.
 const timer = (data: BoardData, startedAt: string, now: number) => (data.settings.show_timers === false ? "ON IT" : elapsed(startedAt, now));
