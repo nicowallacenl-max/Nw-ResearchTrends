@@ -121,7 +121,8 @@ export function Board({ data }: { data: BoardData }) {
     }
     setBusy(false);
     if (r.ok) {
-      setFlow(backTo(jobId));
+      // A finished job leaves the board, so only then go back to the board.
+      setFlow(r.job_done ? null : backTo(jobId));
       setToast({ text: onOk(r), tone: "ok" });
       router.refresh();
       return;
@@ -165,9 +166,9 @@ export function Board({ data }: { data: BoardData }) {
     run(
       () => completeWork({ techId: f.techId, pin, lineId: f.lineId }),
       (r) => (r.job_done ? `${job.rego} is finished. All items complete!` : `${line.description} complete. Next step unlocked.`),
-      (r) => (r.error === "wrong_pin" ? f : backTo(f.jobId)),
-      // a finished job leaves the board, so go back to the board instead
-      undefined,
+      (r) => (r.error === "wrong_pin" ? f : backTo(f.jobId ?? job.id)),
+      // stay on the job so the next unlocked line is right there (also when completing from My work)
+      f.jobId ?? job.id,
     );
   }
 
