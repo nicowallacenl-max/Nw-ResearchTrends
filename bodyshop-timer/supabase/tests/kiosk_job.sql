@@ -28,7 +28,12 @@ do $$ declare k text := current_setting('my.key'); r jsonb; begin
   assert (r->>'ok')::boolean, 'start: ' || r::text;
   r := kiosk_pause(k, '00000000-0000-0000-0000-0000000000b3', '3333', '00000000-0000-0000-0000-0000000000a1');
   r := kiosk_complete(k, '00000000-0000-0000-0000-0000000000b3', '3333', '00000000-0000-0000-0000-0000000001f1');
-  assert (r->>'ok')::boolean, 'complete: ' || r::text;
+  assert r->>'error' = 'line_paused', 'complete while paused should be refused: ' || r::text;
+  assert (kiosk_board(k)->'jobs') @> '[{"lines":[{"state":"paused","pause_reason":"Waiting on parts"}]}]', 'board shows paused line';
+  r := kiosk_start(k, '00000000-0000-0000-0000-0000000000b3', '3333', '00000000-0000-0000-0000-0000000001f1');  -- resume
+  assert (r->>'ok')::boolean, 'resume: ' || r::text;
+  r := kiosk_complete(k, '00000000-0000-0000-0000-0000000000b3', '3333', '00000000-0000-0000-0000-0000000001f1');
+  assert (r->>'ok')::boolean, 'complete after resume: ' || r::text;
   assert exists (select 1 from jsonb_array_elements(kiosk_job(k, '00000000-0000-0000-0000-0000000000c3')->'activity') e
                  where e->>'message' like 'Tom% completed Tailgate - repair'), 'completion logged';
 end $$;
