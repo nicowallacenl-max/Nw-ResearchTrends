@@ -31,3 +31,15 @@ export function periodStart(period: Period, tz: string, now = new Date()): strin
   const offset = Date.parse(new Date(utcMidnight).toLocaleString("en-US", { timeZone: tz })) - Date.parse(new Date(utcMidnight).toLocaleString("en-US", { timeZone: "UTC" }));
   return new Date(utcMidnight - offset).toISOString();
 }
+
+// Activity-log timestamps like the mockup: today -> 16:42, within the week -> THU, older -> 12 OCT.
+export function activityTime(iso: string, tz: string, now = Date.now()) {
+  const d = new Date(iso);
+  const day = (x: Date) => x.toLocaleDateString("en-CA", { timeZone: tz });
+  if (day(d) === day(new Date(now))) return d.toLocaleTimeString("en-AU", { timeZone: tz, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+  if (now - d.getTime() < 6 * 86400000) return d.toLocaleDateString("en-AU", { timeZone: tz, weekday: "short" }).toUpperCase();
+  return d.toLocaleDateString("en-AU", { timeZone: tz, day: "numeric", month: "short" }).toUpperCase();
+}
+
+export const etaLabel = (iso: string | null, tz: string) =>
+  iso ? new Date(`${iso}T12:00:00`).toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short", timeZone: tz }).replace(",", "") : null;

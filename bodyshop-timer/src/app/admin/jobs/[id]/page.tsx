@@ -12,6 +12,7 @@ import { PhotoUpload } from "@/components/PhotoUpload";
 import { Badge, Button, Card, Field, Flash, Input, Select, buttonCls, td, th, theadCls } from "@/components/ui";
 import { requireAdmin } from "@/lib/auth";
 import { photoUrl } from "@/lib/photos";
+import { activityTime } from "@/lib/time";
 import { COMPLETE, STAGE_COUNT, STAGES, isComplete } from "@/lib/stages";
 import {
   JOB_STATUS_LABEL, PROCEDURE_LABEL, PROCEDURES, SUBSTATUS_TONE, durationSince, substatusLabel,
@@ -41,15 +42,6 @@ function TechOptions({ techs, procedure }: { techs: Technician[]; procedure?: Pr
   );
 }
 const ProcedureOptions = () => <>{PROCEDURES.map((p) => <option key={p} value={p}>{PROCEDURE_LABEL[p]}</option>)}</>;
-
-// Activity timestamps like the mockup: today -> 16:42, this week -> THU, older -> 12 OCT.
-function when(iso: string, tz: string, now: number) {
-  const d = new Date(iso);
-  const day = (x: Date) => x.toLocaleDateString("en-CA", { timeZone: tz });
-  if (day(d) === day(new Date(now))) return d.toLocaleTimeString("en-AU", { timeZone: tz, hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
-  if (now - d.getTime() < 6 * 86400000) return d.toLocaleDateString("en-AU", { timeZone: tz, weekday: "short" }).toUpperCase();
-  return d.toLocaleDateString("en-AU", { timeZone: tz, day: "numeric", month: "short" }).toUpperCase();
-}
 
 export default async function JobPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ error?: string; ok?: string }> }) {
   const [{ id }, { error, ok }] = await Promise.all([params, searchParams]);
@@ -190,7 +182,7 @@ export default async function JobPage({ params, searchParams }: { params: Promis
             <h2 id="log" className="m-0 font-display text-[18px] uppercase tracking-[.14em]">Activity log</h2>
             {(activity ?? []).map((g, i) => (
               <div key={i} className="grid grid-cols-[64px_minmax(0,1fr)] gap-3">
-                <span className="font-mono text-[12px] text-accent">{when(g.at, tz, now)}</span>
+                <span className="font-mono text-[12px] text-accent">{activityTime(g.at, tz, now)}</span>
                 <span className="leading-normal text-body">{g.message}</span>
               </div>
             ))}

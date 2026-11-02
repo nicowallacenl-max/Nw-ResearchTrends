@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 export type Photo = { url: string; caption: string };
 const PER = 3;
@@ -14,6 +15,7 @@ const arrowCls = (off: boolean) =>
   `cut-sm flex h-11 w-11 items-center justify-center border ${off ? "cursor-default border-line bg-bg-subtle text-faint" : "cursor-pointer border-neon bg-neon text-on-neon"}`;
 
 // Thumbnail carousel (3 at a time when there are more than 3) + lightbox, from the JobDetail mockup.
+// The lightbox is portalled to <body>: cut-corner (clip-path) panels would otherwise trap the fixed overlay.
 // With `trigger`, renders just that button, which opens the lightbox (customer tracker "VIEW PHOTOS").
 export function PhotoGallery({ photos, trigger }: { photos: Photo[]; trigger?: { label: string; className: string } }) {
   const n = photos.length;
@@ -99,8 +101,8 @@ export function PhotoGallery({ photos, trigger }: { photos: Photo[]; trigger?: {
 
       </>)}
 
-      {sel !== null && (
-        <div role="dialog" aria-modal="true" aria-label="Photo viewer" className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(11,12,13,.84)] p-8 max-sm:p-3">
+      {sel !== null && createPortal(
+        <div role="dialog" aria-modal="true" aria-label="Photo viewer" className="ab-shell fixed inset-0 z-[70] flex items-center justify-center bg-[rgba(11,12,13,.84)] p-8 max-sm:p-3">
           <button type="button" onClick={() => setSel(null)} aria-label="Close photo viewer" className="absolute inset-0 cursor-zoom-out border-0 bg-transparent" />
           <div className="cut relative flex w-full max-w-[1080px] flex-col gap-4 border border-neon bg-bg p-5 shadow-[0_0_40px_rgba(0,238,234,.35)]">
             <div className="flex items-center justify-between gap-4">
@@ -129,7 +131,8 @@ export function PhotoGallery({ photos, trigger }: { photos: Photo[]; trigger?: {
               ))}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );

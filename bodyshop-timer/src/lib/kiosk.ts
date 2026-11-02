@@ -42,7 +42,21 @@ export type BoardJob = {
   substatus: "not_started" | "working" | "paused" | "stopped" | "idle" | "done";
   substatus_reason: string | null;
   substatus_since: string | null;
+  job_number: string | null;
+  bay: string | null;
+  stage: number;
+  body_type: import("./vehicle").BodyType;
+  eta: string | null;
   lines: BoardLine[];
+};
+
+// One job's extra detail for the wall board job view (kiosk_job).
+export type KioskJob = {
+  ok: true;
+  job: { id: string; job_number: string | null; vin: string | null; body_type: import("./vehicle").BodyType; eta: string | null; stage: number; bay: string | null; insurer: string | null };
+  damage: { id: string; panel: string; type: string; severity: string; note: string | null }[];
+  photos: { path: string; caption: string | null }[];
+  activity: { at: string; kind: string; message: string }[];
 };
 
 export type BoardLine = {
