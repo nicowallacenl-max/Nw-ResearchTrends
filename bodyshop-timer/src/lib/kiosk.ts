@@ -21,7 +21,7 @@ export type KioskResult = { ok: boolean; error?: string; detail?: string | null;
 export type BoardData = {
   ok: true;
   now: string;
-  settings: { helper_policy: "allowed" | "owner_approval" | "not_allowed"; warn_pct: number; time_zone: string };
+  settings: { helper_policy: "allowed" | "owner_approval" | "not_allowed"; warn_pct: number; time_zone: string; show_timers?: boolean };
   technicians: { id: string; name: string; procedures: string[] }[];
   delay_reasons: { id: string; label: string }[];
   jobs: BoardJob[];

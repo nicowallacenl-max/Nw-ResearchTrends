@@ -46,6 +46,13 @@ export default async function SettingsPage({ searchParams }: { searchParams: Fla
                 ))}
               </Select>
             </Field>
+            <label className="flex items-center gap-3 sm:col-span-2">
+              <input type="checkbox" name="board_show_timers" defaultChecked={s.board_show_timers} className="h-5 w-5 accent-[var(--text-accent)]" />
+              <span>
+                <span className="font-display text-[15px] font-semibold uppercase tracking-[.06em]">Show live timers on the wall board</span>
+                <span className="block text-[13px] text-muted">When off, the board shows who&apos;s working (“ON IT”) but not the running clock on job lines, cards or My work. Time is still recorded and reported.</span>
+              </span>
+            </label>
             <Field label="Tile turns amber at (% of quoted hours)">
               <Input name="warn_pct" type="number" min="1" max="100" defaultValue={s.warn_pct} required />
             </Field>

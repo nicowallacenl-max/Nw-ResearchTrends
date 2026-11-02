@@ -28,9 +28,9 @@ export function PageHeader({ title, eyebrow, children }: { title: string; eyebro
   );
 }
 
-export function Card({ title, children, className = "", aside }: { title?: string; children: ReactNode; className?: string; aside?: ReactNode }) {
+export function Card({ title, children, className = "", aside, id }: { title?: string; children: ReactNode; className?: string; aside?: ReactNode; id?: string }) {
   return (
-    <section className={`cut mb-6 border border-line bg-bg px-6 py-[22px] ${className}`}>
+    <section id={id} className={`cut mb-6 scroll-mt-6 border border-line bg-bg px-6 py-[22px] ${className}`}>
       {(title || aside) && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           {title && <h2 className="m-0 font-display text-[18px] uppercase tracking-[.14em] text-ink">{title}</h2>}
