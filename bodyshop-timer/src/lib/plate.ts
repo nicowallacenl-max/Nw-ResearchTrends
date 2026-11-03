@@ -5,8 +5,16 @@ export type AuState = (typeof AU_STATES)[number];
 
 export type PlateVehicle = { make: string; model: string; body_type: BodyType | null; description: string };
 export type PlateResult =
-  | { ok: true; vehicle: PlateVehicle; alternatives: PlateVehicle[]; match: string; sandbox: boolean; remaining: number | null }
-  | { ok: false; reason: "not_found" | "invalid" | "quota" | "unavailable" | "not_configured"; message: string; remaining: number | null };
+  | { ok: true; vehicle: PlateVehicle; alternatives: PlateVehicle[]; match: string; sandbox: boolean; remaining: number | null; cached?: boolean }
+  | { ok: false; reason: "not_found" | "invalid" | "quota" | "unavailable" | "not_configured"; message: string; remaining: number | null; cached?: boolean };
+
+// A row from rego_suggestions(): a vehicle already known from a past job or a cached registry lookup.
+export type RegoSuggestion = {
+  rego: string; source: "job" | "lookup"; make: string | null; model: string | null; colour: string | null; vin: string | null;
+  body_type: BodyType | null; customer_name: string | null; state: string | null; seen_at: string;
+};
+
+export const normalisePlate = (s: string) => s.toUpperCase().replace(/[^A-Z0-9]/g, "");
 
 type Raw = { make?: string; model?: string; body?: string; description?: string; detailed_description?: string };
 

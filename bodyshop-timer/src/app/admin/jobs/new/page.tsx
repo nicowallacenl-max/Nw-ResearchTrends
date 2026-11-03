@@ -14,7 +14,7 @@ export default async function NewJobPage({ searchParams }: { searchParams: Flash
       <Card title="Vehicle & customer">
         <form action={createJob} className="flex flex-col gap-5">
           <JobFields lookup />
-          <p className="m-0 text-muted">A job number (AB-…) is assigned automatically. Look up the rego to fill make, model and body type. You&apos;ll add quote lines, damage and photos on the next screen.</p>
+          <p className="m-0 text-muted">A job number (AB-…) is assigned automatically. Start typing the rego to pick a known vehicle or look it up in the registry. You&apos;ll add quote lines, damage and photos on the next screen.</p>
           <div><Button type="submit">Create job</Button></div>
         </form>
       </Card>
