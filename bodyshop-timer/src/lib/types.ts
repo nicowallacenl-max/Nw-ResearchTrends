@@ -10,8 +10,15 @@ export const PROCEDURE_LABEL: Record<Procedure, string> = {
   refit: "Refit",
 };
 
+// Internal work status (kept in sync by the database). The office works with Status + Status reason below.
 export type JobStatus = "open" | "in_progress" | "done";
-export const JOB_STATUS_LABEL: Record<JobStatus, string> = { open: "Open", in_progress: "In progress", done: "Done" };
+
+// Job lifecycle. Status is Active until the vehicle is picked up, then Inactive.
+export const STATUS_REASONS = ["review", "approved", "completed", "picked_up"] as const;
+export type StatusReason = (typeof STATUS_REASONS)[number];
+export const STATUS_REASON_LABEL: Record<StatusReason, string> = { review: "Review", approved: "Approved", completed: "Completed", picked_up: "Picked up" };
+export const STATUS_REASON_TONE: Record<StatusReason, "stone" | "neon" | "green" | "blue"> = { review: "stone", approved: "neon", completed: "green", picked_up: "blue" };
+export const isActive = (r: StatusReason) => r !== "picked_up";
 
 export type HelperPolicy = "allowed" | "owner_approval" | "not_allowed";
 export const HELPER_POLICY_LABEL: Record<HelperPolicy, string> = {
@@ -29,6 +36,7 @@ export type Job = {
   colour: string | null;
   photo_url: string | null;
   status: JobStatus;
+  status_reason: StatusReason;
   created_at: string;
 };
 
@@ -101,5 +109,5 @@ export function durationSince(iso: string | null, now = Date.now()) {
 export type JobFull = Job & {
   job_number: string | null; bay: string | null; customer_name: string | null; customer_phone: string | null;
   insurer: string | null; claim_number: string | null; vin: string | null; body_type: import("./vehicle").BodyType;
-  due_in: string | null; due_out: string | null; work_summary: string | null; stage: number; track_token: string; collected_at: string | null;
+  due_in: string | null; due_out: string | null; work_summary: string | null; track_token: string; collected_at: string | null;
 };

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { linesProgress, type LineState } from "@/lib/stages";
 import { PROCEDURE_LABEL } from "@/lib/types";
 
@@ -7,13 +8,13 @@ const RED = "var(--progress)", GREEN = "var(--complete)", AMBER = "var(--hazard)
 // "Repair progress" panel (JobDetail mockup style), one segment per job line in the same order as the list:
 // done = full red, running = half red (NOW), paused = half amber (PAUSED), not started / locked = grey.
 // When every line is done the whole bar turns green with a green border.
-export function LineProgress({ lines }: { lines: { id: string; description: string; procedure: string; state: string }[] }) {
+export function LineProgress({ lines, badge }: { lines: { id: string; description: string; procedure: string; state: string }[]; badge?: ReactNode }) {
   const p = linesProgress(lines.map((l) => l.state));
   const complete = p.allDone;
   return (
     <section aria-label="Repair progress by job line" className={`cut bg-bg px-6 py-[22px] ${complete ? "border border-complete shadow-[0_0_24px_rgba(22,163,74,.18)]" : "border border-line"}`}>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <span className="font-mono text-[11px] tracking-[.16em] text-muted">REPAIR PROGRESS</span>
+        <span className="flex flex-wrap items-center gap-3"><span className="font-mono text-[11px] tracking-[.16em] text-muted">REPAIR PROGRESS</span>{badge}</span>
         <span className={`font-mono text-[12px] font-medium tracking-[.14em] ${complete ? "text-complete" : p.total ? "text-progress" : "text-muted"}`}>
           {!p.total ? "NO JOB LINES YET" : complete ? "COMPLETE · ALL LINES DONE" : `IN PROGRESS · ${p.done} OF ${p.total} DONE`}
         </span>

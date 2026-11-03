@@ -1,33 +1,31 @@
-// Job progress: 7 stages (index 0-6). Stage 7 = complete / ready to collect.
-// Moves forward automatically as technicians start and complete work (database), and the office advances it.
-export const STAGES = ["Assess", "Approve", "Strip", "Panel", "Paint", "Reassemble", "QC & Ready"] as const;
-export const STAGE_COUNT = STAGES.length;
-export const COMPLETE = STAGE_COUNT; // 7
+// Repair progress = the job lines. The floor (wall board), the office and the customer tracker all read the same thing.
+import { PROCEDURE_LABEL, type Procedure } from "@/lib/types";
 
-// Customer-facing names for the same 7 steps (MobileTracker mockup).
-export const TRACKER_STEPS = ["Checked in", "Assessed", "Insurer approved", "Panel work", "Paint", "Reassembly", "Ready to collect"] as const;
-
-export const isComplete = (stage: number) => stage >= COMPLETE;
-export const stageLabel = (stage: number) => (isComplete(stage) ? "Complete" : STAGES[stage] ?? "Assess");
-
-// Progress bar fill: done stages full, current stage half; 100% when complete.
-export const progressPct = (stage: number) => (isComplete(stage) ? 100 : Math.round(((stage + 0.5) / STAGE_COUNT) * 100));
-
-export type ChipTone = "stone" | "green" | "amber" | "neon";
-// Stage chip used on bays and the pipeline: READY (green) / PARTS (amber, paused waiting on parts) / ASSESS (grey) / stage (cyan).
-export function stageChip(stage: number, pausedFor?: string | null): { label: string; tone: ChipTone } {
-  if (isComplete(stage)) return { label: "READY", tone: "green" };
-  if (pausedFor && /part/i.test(pausedFor)) return { label: "PARTS", tone: "amber" };
-  if (stage === 0) return { label: "ASSESS", tone: "stone" };
-  return { label: STAGES[stage].toUpperCase(), tone: "neon" };
-}
-
-// ---------------------------------------------------------------- progress = job lines
-// The progress bars follow the job lines: one segment per line. Done = full, running/paused = half.
 export type LineState = "done" | "running" | "paused" | "ready" | "locked";
+
+// Progress bar: one segment per line. Done = full, running/paused = half.
 export function linesProgress(states: string[]) {
   const total = states.length;
   const done = states.filter((s) => s === "done").length;
   const half = states.filter((s) => s === "running" || s === "paused").length;
   return { total, done, allDone: total > 0 && done === total, pct: total ? Math.round(((done + half * 0.5) / total) * 100) : 0 };
+}
+
+// The procedure the job is on now: the first line (in workshop order) that isn't done.
+export function currentProcedure(lines: { procedure: string; state: string }[]): Procedure | null {
+  return (lines.find((l) => l.state !== "done")?.procedure as Procedure | undefined) ?? null;
+}
+
+export type ChipTone = "stone" | "green" | "amber" | "neon";
+// Chip for bays, the pipeline and board tiles: READY (all lines done) / PARTS (paused waiting on parts) /
+// NOT STARTED (nothing done or running yet) / the current procedure (e.g. PAINT).
+export function jobChip(lines: { procedure: string; state: string }[], pausedFor?: string | null): { label: string; tone: ChipTone } {
+  const p = linesProgress(lines.map((l) => l.state));
+  if (p.allDone) return { label: "READY", tone: "green" };
+  if (pausedFor && /part/i.test(pausedFor)) return { label: "PARTS", tone: "amber" };
+  if (!p.total) return { label: "NO LINES", tone: "stone" };
+  const started = lines.some((l) => l.state === "done" || l.state === "running" || l.state === "paused");
+  if (!started) return { label: "NOT STARTED", tone: "stone" };
+  const cur = currentProcedure(lines);
+  return { label: (cur ? PROCEDURE_LABEL[cur] : "In progress").toUpperCase(), tone: "neon" };
 }

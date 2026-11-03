@@ -26,12 +26,12 @@ export const shopToday = (tz: string, at = new Date()) => at.toLocaleDateString(
 export type DueKind = "in" | "out";
 export type DueTone = "due-in" | "due-out" | "ready" | "at-risk" | "overdue";
 
-export const allLinesDone = (j: Pick<BoardJob, "lines" | "status" | "stage">) =>
-  j.status === "done" || j.stage >= 7 || (j.lines.length > 0 && j.lines.every((l) => l.state === "done"));
+export const allLinesDone = (j: Pick<BoardJob, "lines" | "status">) =>
+  j.status === "done" || (j.lines.length > 0 && j.lines.every((l) => l.state === "done"));
 
 // How a due-out should read: READY (all lines done), OVERDUE (date passed, not done), AT RISK (due today or
 // tomorrow, not done) or plain DUE OUT.
-export function dueOutTone(j: Pick<BoardJob, "lines" | "status" | "stage" | "due_out">, today: string): DueTone {
+export function dueOutTone(j: Pick<BoardJob, "lines" | "status" | "due_out">, today: string): DueTone {
   if (allLinesDone(j)) return "ready";
   if (j.due_out && j.due_out < today) return "overdue";
   if (j.due_out && daysBetween(today, j.due_out) <= 1) return "at-risk";

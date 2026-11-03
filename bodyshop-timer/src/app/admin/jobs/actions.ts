@@ -5,8 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { back, friendly } from "@/lib/flash";
 import { num, optStr, str } from "@/lib/form";
-import { PROCEDURES, PROCEDURE_LABEL, type Procedure } from "@/lib/types";
-import { COMPLETE } from "@/lib/stages";
+import { PROCEDURES, PROCEDURE_LABEL, STATUS_REASONS, STATUS_REASON_LABEL, type Procedure, type StatusReason } from "@/lib/types";
 import { BODY_TYPES, DAMAGE_TYPES, SEVERITIES, type BodyType } from "@/lib/vehicle";
 
 function jobFields(form: FormData) {
@@ -97,16 +96,6 @@ export async function deleteJob(form: FormData) {
   }
   revalidatePath("/admin/jobs");
   back("/admin/jobs", { ok: "Job deleted." });
-}
-
-// Admin can reopen a finished job (spec: "admin can reopen it"). Lines stay as they are.
-export async function setJobStatus(form: FormData) {
-  const { supabase } = await requireAdmin();
-  const id = str(form, "id");
-  const status = str(form, "status") as "open" | "in_progress" | "done";
-  const { error } = await supabase.from("jobs").update({ status }).eq("id", id);
-  if (error) back(`/admin/jobs/${id}`, { error: friendly(error) });
-  back(`/admin/jobs/${id}`, { ok: status === "done" ? "Job marked done." : "Job reopened." });
 }
 
 function lineFields(form: FormData) {
@@ -216,36 +205,54 @@ export async function autoAssign(form: FormData) {
 }
 
 
-// ---------------------------------------------------------------- Workshop OS: stage, collection, damage, photos
+// ---------------------------------------------------------------- status reason (header dropdown)
 
-// "ADVANCE STAGE" / "MARK COMPLETE" on the job page.
-export async function advanceStage(form: FormData) {
+// Review -> Approved -> Completed -> Picked up. Completed is automatic (all lines done); the database keeps
+// collected_at and the activity log in step. Rules here are the friendly checks before the change.
+export async function setStatusReason(form: FormData) {
   const { supabase } = await requireAdmin();
   const id = str(form, "id");
-  const { data: job } = await supabase.from("jobs").select("stage").eq("id", id).single();
-  if (!job || job.stage >= COMPLETE) back(`/admin/jobs/${id}`, { error: "This job is already complete." });
-  const { error } = await supabase.from("jobs").update({ stage: job.stage + 1 }).eq("id", id);
-  if (error) back(`/admin/jobs/${id}`, { error: friendly(error) });
-  back(`/admin/jobs/${id}`, { ok: job.stage + 1 >= COMPLETE ? "Job complete · ready to collect." : "Stage advanced." });
-}
+  const path = `/admin/jobs/${id}`;
+  const to = str(form, "status_reason") as StatusReason;
+  if (!(STATUS_REASONS as readonly string[]).includes(to)) back(path, { error: "Pick a status." });
 
-// Correction: move the job back one stage (e.g. advanced by mistake, or QC failed).
-export async function stageBack(form: FormData) {
-  const { supabase } = await requireAdmin();
-  const id = str(form, "id");
-  const { data: job } = await supabase.from("jobs").select("stage").eq("id", id).single();
-  if (!job || job.stage <= 0) back(`/admin/jobs/${id}`, { error: "Already at the first stage." });
-  const { error } = await supabase.from("jobs").update({ stage: job.stage - 1 }).eq("id", id);
-  if (error) back(`/admin/jobs/${id}`, { error: friendly(error) });
-  back(`/admin/jobs/${id}`, { ok: "Moved back a stage." });
-}
+  const [{ data: job }, { data: lines }, { count: running }] = await Promise.all([
+    supabase.from("jobs").select("status_reason, due_in").eq("id", id).single<{ status_reason: StatusReason; due_in: string | null }>(),
+    supabase.from("quote_lines").select("assigned_technician_id, completed_at").eq("job_id", id),
+    supabase.from("work_segments").select("id, quote_lines!inner(job_id)", { count: "exact", head: true }).eq("quote_lines.job_id", id).is("ended_at", null),
+  ]);
+  if (!job) back(path, { error: "Job not found." });
+  if (job.status_reason === to) back(path, { ok: `Status is already ${STATUS_REASON_LABEL[to]}.` });
+  const all = lines ?? [];
+  const allDone = all.length > 0 && all.every((l) => l.completed_at);
 
-export async function markCollected(form: FormData) {
-  const { supabase } = await requireAdmin();
-  const id = str(form, "id");
-  const { error } = await supabase.from("jobs").update({ collected_at: new Date().toISOString(), stage: COMPLETE }).eq("id", id);
-  if (error) back(`/admin/jobs/${id}`, { error: friendly(error) });
-  back(`/admin/jobs/${id}`, { ok: "Marked as collected. The job leaves the workshop dashboard." });
+  if ((to === "review" || to === "picked_up") && running) {
+    back(path, { error: `Someone is clocked on to this job. They need to pause or complete before it can be set to ${STATUS_REASON_LABEL[to]}.` });
+  }
+  if (to === "review" || to === "approved") {
+    if (allDone) back(path, { error: "Every job line is complete, so the job is Completed. Reopen a line to move it back." });
+  }
+  if (to === "approved") {
+    const missing = [
+      !all.some((l) => l.assigned_technician_id) && "at least one job line with an owner",
+      !job.due_in && "a Due in date",
+    ].filter(Boolean);
+    if (missing.length) back(path, { error: `Before approving, add ${missing.join(" and ")}.` });
+  }
+  if (to === "completed" && !allDone) {
+    back(path, { error: "Completed is set automatically when every job line is complete." });
+  }
+
+  const { error } = await supabase.from("jobs").update({ status_reason: to }).eq("id", id);
+  if (error) back(path, { error: friendly(error) });
+  back(path, {
+    ok: {
+      review: "Status set to Review. The job is off the wall board.",
+      approved: "Approved. The job shows on the wall board from its Due in date.",
+      completed: "Status set to Completed.",
+      picked_up: "Picked up. The job is now inactive.",
+    }[to],
+  });
 }
 
 export async function addDamage(form: FormData) {

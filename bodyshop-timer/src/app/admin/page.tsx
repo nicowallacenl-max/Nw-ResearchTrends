@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { Badge, PageHeader, td, th, theadCls } from "@/components/ui";
 import { requireAdmin } from "@/lib/auth";
-import { isComplete, linesProgress, stageChip } from "@/lib/stages";
-import { durationSince, type JobSubstatus } from "@/lib/types";
+import { currentProcedure, jobChip, linesProgress } from "@/lib/stages";
+import { PROCEDURES, STATUS_REASON_LABEL, STATUS_REASON_TONE, durationSince, type JobSubstatus, type Procedure, type StatusReason } from "@/lib/types";
 
 type Row = {
   id: string; job_number: string | null; rego: string; make: string | null; model: string | null; bay: string | null;
-  customer_name: string | null; insurer: string | null; work_summary: string | null; due_out: string | null; stage: number;
+  customer_name: string | null; insurer: string | null; work_summary: string | null; due_out: string | null; status_reason: StatusReason;
 };
 
 const vehicleName = (j: Row) => [j.make, j.model].filter(Boolean).join(" ") || "Vehicle";
@@ -27,13 +27,13 @@ function Kpi({ label, value, note, tone = "ink", featured }: { label: string; va
 export default async function WorkshopFloor() {
   const { supabase } = await requireAdmin();
   const [{ data: jobs }, { data: subs }, { data: running }, { data: lines }, { data: techs }, { data: s }, { data: lineStates }] = await Promise.all([
-    supabase.from("jobs").select("id, job_number, rego, make, model, bay, customer_name, insurer, work_summary, due_out, stage").is("collected_at", null).order("job_number").returns<Row[]>(),
+    supabase.from("jobs").select("id, job_number, rego, make, model, bay, customer_name, insurer, work_summary, due_out, status_reason").neq("status_reason", "picked_up").order("job_number").returns<Row[]>(),
     supabase.from("v_job_substatus").select("job_id, substatus, reason, since, working_count").returns<JobSubstatus[]>(),
     supabase.from("work_segments").select("technician_id, quote_lines(job_id, procedure)").is("ended_at", null),
     supabase.from("quote_lines").select("job_id, description, procedure, assigned_technician_id, completed_at").order("created_at"),
     supabase.from("technicians").select("id, name"),
     supabase.from("settings").select("time_zone").single<{ time_zone: string }>(),
-    supabase.from("v_quote_line_state").select("job_id, state"),
+    supabase.from("v_quote_line_state").select("job_id, procedure, state"),
   ]);
   const tz = s?.time_zone ?? "Australia/Brisbane";
   const now = Date.now();
@@ -54,9 +54,14 @@ export default async function WorkshopFloor() {
   const work = (j: Row) => j.work_summary || (lines ?? []).filter((l) => l.job_id === j.id).slice(0, 2).map((l) => l.description).join(" + ") || "—";
   const partsWait = (id: string) => { const x = sub.get(id); return x?.substatus === "paused" && /part/i.test(x.reason ?? "") ? x : null; };
 
-  const active = all.filter((j) => !isComplete(j.stage));
-  const ready = all.filter((j) => isComplete(j.stage));
-  const painting = active.filter((j) => j.stage === 4);
+  // Job lines in workshop order, per job (same as the board and the job page).
+  const linesOf = (id: string) => (lineStates ?? []).filter((l) => l.job_id === id)
+    .sort((a, b) => PROCEDURES.indexOf(a.procedure as Procedure) - PROCEDURES.indexOf(b.procedure as Procedure)) as { procedure: string; state: string }[];
+  const isReady = (j: Row) => j.status_reason === "completed";
+  const active = all.filter((j) => !isReady(j));
+  const ready = all.filter(isReady);
+  // In the paint booth: approved jobs whose next open line is prep or paint.
+  const painting = active.filter((j) => j.status_reason === "approved" && ["prep", "paint"].includes(currentProcedure(linesOf(j.id)) ?? ""));
   const paintingNow = new Set(run.filter((r) => ["paint", "prep"].includes(r.quote_lines?.procedure ?? "")).map((r) => r.quote_lines!.job_id)).size;
   const parts = active.filter((j) => partsWait(j.id));
   const longestParts = parts.map((j) => partsWait(j.id)!.since).filter(Boolean).sort()[0] ?? null;
@@ -85,9 +90,9 @@ export default async function WorkshopFloor() {
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4">
             {bays.map((j) => {
-              const done = isComplete(j.stage);
+              const done = isReady(j);
               const p = partsWait(j.id);
-              const chip = stageChip(j.stage, p?.reason);
+              const chip = jobChip(linesOf(j.id), p?.reason);
               const eta = done ? "Complete · ready to collect" : p ? `Waiting on parts · ${durationSince(p.since, now)}` : etaText(j.due_out, tz) ? `Due out ${etaText(j.due_out, tz)}` : "No due-out date";
               return (
                 <Link key={j.id} href={`/admin/jobs/${j.id}`}
@@ -99,7 +104,7 @@ export default async function WorkshopFloor() {
                   <span className="font-display text-[20px] font-semibold text-ink">{vehicleName(j)}</span>
                   <span className="font-mono text-[13px] text-muted">{j.rego} · {techFor(j.id)}</span>
                   {(() => {
-                    const lp = linesProgress((lineStates ?? []).filter((l) => l.job_id === j.id).map((l) => l.state as string));
+                    const lp = linesProgress(linesOf(j.id).map((l) => l.state));
                     return <div className="h-1.5 bg-line"><div className={`h-1.5 ${done || lp.allDone ? "bg-complete" : "bg-progress"}`} style={{ width: `${done || lp.allDone ? 100 : lp.pct}%` }} /></div>;
                   })()}
                   <span className="text-[12px] text-muted">{eta}</span>
@@ -117,12 +122,12 @@ export default async function WorkshopFloor() {
             <thead className={theadCls}>
               <tr>
                 <th className={th}>JOB #</th><th className={th}>VEHICLE</th><th className={th}>CUSTOMER</th>
-                <th className={th}>WORK</th><th className={th}>PAYER</th><th className={th}>STAGE</th>
+                <th className={th}>WORK</th><th className={th}>PAYER</th><th className={th}>STATUS</th><th className={th}>REPAIR PROGRESS</th>
               </tr>
             </thead>
             <tbody>
               {all.map((j) => {
-                const chip = stageChip(j.stage, partsWait(j.id)?.reason);
+                const chip = jobChip(linesOf(j.id), partsWait(j.id)?.reason);
                 return (
                   <tr key={j.id}>
                     <td className={`${td} font-mono`}><Link href={`/admin/jobs/${j.id}`}>{j.job_number}</Link></td>
@@ -130,11 +135,12 @@ export default async function WorkshopFloor() {
                     <td className={`${td} text-body`}>{j.customer_name || "—"}</td>
                     <td className={`${td} text-body`}>{work(j)}</td>
                     <td className={`${td} text-body`}>{j.insurer || "Private"}</td>
+                    <td className={td}><Badge tone={STATUS_REASON_TONE[j.status_reason]}>{STATUS_REASON_LABEL[j.status_reason]}</Badge></td>
                     <td className={td}><Badge tone={chip.tone}>{chip.label}</Badge></td>
                   </tr>
                 );
               })}
-              {!all.length && <tr><td className={`${td} text-muted`} colSpan={6}>No active jobs. Use New job to add one.</td></tr>}
+              {!all.length && <tr><td className={`${td} text-muted`} colSpan={7}>No active jobs. Use New job to add one.</td></tr>}
             </tbody>
           </table>
         </div>

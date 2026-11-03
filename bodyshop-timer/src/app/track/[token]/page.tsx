@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { PhotoGallery } from "@/components/PhotoGallery";
 import { Logo } from "@/components/ui";
 import { photoUrl } from "@/lib/photos";
-import { COMPLETE, STAGE_COUNT, STAGES, TRACKER_STEPS } from "@/lib/stages";
+import { PROCEDURE_LABEL, type Procedure, type StatusReason } from "@/lib/types";
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "@/lib/supabase/config";
 
 export const dynamic = "force-dynamic";
@@ -11,8 +11,10 @@ export const metadata: Metadata = { title: "Your repair · Autobodies", robots: 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#ffffff" };
 
 type Track = {
-  job_number: string; make: string | null; model: string | null; rego: string; stage: number; due_out: string | null;
-  collected: boolean; created_at: string; stage_times: (string | null)[]; shop_phone: string | null; photos: { path: string; caption: string | null }[];
+  job_number: string; make: string | null; model: string | null; rego: string; status_reason: StatusReason; due_out: string | null;
+  collected: boolean; created_at: string; approved_at: string | null; completed_at: string | null;
+  lines: { procedure: Procedure; state: string; done_at: string | null }[];
+  shop_phone: string | null; photos: { path: string; caption: string | null }[];
 };
 
 const TZ = "Australia/Brisbane";
@@ -38,11 +40,21 @@ export default async function Tracker({ params }: { params: Promise<{ token: str
     );
   }
 
-  const complete = t.stage >= COMPLETE;
-  const current = Math.min(t.stage, COMPLETE);
-  const ring = complete ? 264 : Math.round(((current + 0.5) / STAGE_COUNT) * 264);
+  // Steps: checked in -> approved -> one per job line (same progress the workshop floor sees) -> ready to collect.
+  const complete = t.status_reason === "completed" || t.status_reason === "picked_up";
+  const approved = t.status_reason !== "review";
+  const steps: { name: string; done: boolean; at: string | null }[] = [
+    { name: "Checked in", done: true, at: t.created_at },
+    { name: "Approved", done: approved, at: t.approved_at },
+    ...t.lines.map((l) => ({ name: PROCEDURE_LABEL[l.procedure] ?? l.procedure, done: l.state === "done", at: l.done_at })),
+    { name: "Ready to collect", done: complete, at: t.completed_at },
+  ];
+  const total = steps.length;
+  const current = complete ? total : steps.findIndex((s) => !s.done);
+  const doneCount = steps.filter((s) => s.done).length;
+  const ring = complete ? 264 : Math.round(((doneCount + 0.5) / total) * 264);
   const stroke = complete ? "var(--complete)" : "var(--progress)";
-  const nowLabel = complete ? (t.collected ? "COLLECTED" : "COMPLETE · READY TO COLLECT") : `NOW · ${TRACKER_STEPS[current].toUpperCase()}`;
+  const nowLabel = complete ? (t.collected ? "COLLECTED" : "COMPLETE · READY TO COLLECT") : `NOW · ${steps[current].name.toUpperCase()}`;
   const headline = complete ? (t.collected ? "Collected. Thanks!" : "Ready to collect") : t.due_out ? `Ready ${etaDay(t.due_out)}` : "Ready date to come";
 
   return (
@@ -58,11 +70,11 @@ export default async function Tracker({ params }: { params: Promise<{ token: str
 
         <div className={`cut-14 flex items-center gap-[18px] bg-bg p-5 ${complete ? "border border-complete shadow-[0_0_28px_rgba(22,163,74,.22)]" : "border border-neon shadow-[0_0_28px_rgba(0,238,234,.22)]"}`}>
           <svg width="96" height="96" viewBox="0 0 100 100" role="img" className="shrink-0"
-            aria-label={complete ? "Repair complete, all 7 stages done" : `Repair ${current} of ${STAGE_COUNT} stages done, now on ${STAGES[current]}`}>
+            aria-label={complete ? `Repair complete, all ${total} steps done` : `Repair ${doneCount} of ${total} steps done, now on ${steps[current].name}`}>
             <circle cx="50" cy="50" r="42" fill="none" stroke="var(--border)" strokeWidth="8" />
             <circle cx="50" cy="50" r="42" fill="none" stroke={stroke} strokeWidth="8" strokeDasharray={`${ring} 264`} transform="rotate(-90 50 50)" />
             <text x="50" y="56" textAnchor="middle" fontFamily="var(--font-display)" fontWeight="700" fontSize="22" fill="var(--text-strong)">
-              {complete ? STAGE_COUNT : current + 1}/{STAGE_COUNT}
+              {complete ? total : doneCount}/{total}
             </text>
           </svg>
           <div className="flex flex-col gap-1.5">
@@ -73,13 +85,12 @@ export default async function Tracker({ params }: { params: Promise<{ token: str
         </div>
 
         <ol className="m-0 flex list-none flex-col p-0">
-          {TRACKER_STEPS.map((name, i) => {
-            const done = complete || i < current, now = !complete && i === current;
-            const reached = t.stage_times[i + 1];
-            const when = done ? (reached ? weekday(reached) : "✓") : now ? "NOW" : i === STAGE_COUNT - 1 && t.due_out ? weekday(`${t.due_out}T12:00:00`) : "—";
+          {steps.map(({ name, done: stepDone, at }, i) => {
+            const done = complete || stepDone, now = !complete && i === current;
+            const when = done ? (at ? weekday(at) : "✓") : now ? "NOW" : i === total - 1 && t.due_out ? weekday(`${t.due_out}T12:00:00`) : "—";
             const colour = complete ? "var(--complete)" : "var(--progress)";
             return (
-              <li key={name} className="grid min-h-10 grid-cols-[22px_minmax(0,1fr)_auto] items-center gap-3">
+              <li key={`${i}-${name}`} className="grid min-h-10 grid-cols-[22px_minmax(0,1fr)_auto] items-center gap-3">
                 <span className="h-3 w-3 justify-self-center rotate-45"
                   style={done ? { background: colour } : now ? { background: "#fff", border: `2px solid ${colour}`, boxShadow: "0 0 8px rgba(225,29,46,.5)" } : { background: "#fff", border: "2px solid var(--text-faint)" }} />
                 <span className="font-display text-[15px] font-semibold tracking-[.04em]" style={{ color: now ? "var(--progress)" : done ? (complete ? "var(--complete)" : "var(--text-strong)") : "var(--text-muted)" }}>{name}</span>
