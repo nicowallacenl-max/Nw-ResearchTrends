@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Badge, PageHeader, td, th, theadCls } from "@/components/ui";
 import { requireAdmin } from "@/lib/auth";
-import { isComplete, progressPct, stageChip } from "@/lib/stages";
+import { isComplete, linesProgress, stageChip } from "@/lib/stages";
 import { durationSince, type JobSubstatus } from "@/lib/types";
 
 type Row = {
@@ -26,13 +26,14 @@ function Kpi({ label, value, note, tone = "ink", featured }: { label: string; va
 
 export default async function WorkshopFloor() {
   const { supabase } = await requireAdmin();
-  const [{ data: jobs }, { data: subs }, { data: running }, { data: lines }, { data: techs }, { data: s }] = await Promise.all([
+  const [{ data: jobs }, { data: subs }, { data: running }, { data: lines }, { data: techs }, { data: s }, { data: lineStates }] = await Promise.all([
     supabase.from("jobs").select("id, job_number, rego, make, model, bay, customer_name, insurer, work_summary, eta, stage").is("collected_at", null).order("job_number").returns<Row[]>(),
     supabase.from("v_job_substatus").select("job_id, substatus, reason, since, working_count").returns<JobSubstatus[]>(),
     supabase.from("work_segments").select("technician_id, quote_lines(job_id, procedure)").is("ended_at", null),
     supabase.from("quote_lines").select("job_id, description, procedure, assigned_technician_id, completed_at").order("created_at"),
     supabase.from("technicians").select("id, name"),
     supabase.from("settings").select("time_zone").single<{ time_zone: string }>(),
+    supabase.from("v_quote_line_state").select("job_id, state"),
   ]);
   const tz = s?.time_zone ?? "Australia/Brisbane";
   const now = Date.now();
@@ -97,7 +98,10 @@ export default async function WorkshopFloor() {
                   </div>
                   <span className="font-display text-[20px] font-semibold text-ink">{vehicleName(j)}</span>
                   <span className="font-mono text-[13px] text-muted">{j.rego} · {techFor(j.id)}</span>
-                  <div className="h-1.5 bg-line"><div className={`h-1.5 ${done ? "bg-complete" : "bg-progress"}`} style={{ width: `${progressPct(j.stage)}%` }} /></div>
+                  {(() => {
+                    const lp = linesProgress((lineStates ?? []).filter((l) => l.job_id === j.id).map((l) => l.state as string));
+                    return <div className="h-1.5 bg-line"><div className={`h-1.5 ${done || lp.allDone ? "bg-complete" : "bg-progress"}`} style={{ width: `${done || lp.allDone ? 100 : lp.pct}%` }} /></div>;
+                  })()}
                   <span className="text-[12px] text-muted">{eta}</span>
                 </Link>
               );
