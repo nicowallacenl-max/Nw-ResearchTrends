@@ -1,11 +1,14 @@
 import { Field, Input, Select, Textarea } from "@/components/ui";
 import type { JobFull } from "@/lib/types";
 import { BODY_TYPES, BODY_TYPE_LABEL } from "@/lib/vehicle";
+import { RegoLookup } from "./RegoLookup";
 
-export function JobFields({ job }: { job?: Partial<JobFull> }) {
+export function JobFields({ job, lookup = false }: { job?: Partial<JobFull>; lookup?: boolean }) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <Field label="Rego *"><Input name="rego" required defaultValue={job?.rego} className="uppercase" /></Field>
+      {lookup
+        ? <RegoLookup defaultValue={job?.rego} />
+        : <Field label="Rego *"><Input name="rego" required defaultValue={job?.rego} className="uppercase" /></Field>}
       <Field label="Make"><Input name="make" defaultValue={job?.make ?? ""} /></Field>
       <Field label="Model"><Input name="model" defaultValue={job?.model ?? ""} /></Field>
       <Field label="Body type">
