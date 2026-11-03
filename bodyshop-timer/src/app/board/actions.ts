@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { kioskDb, kioskKey, type KioskJob, type KioskResult } from "@/lib/kiosk";
+import { kioskDb, kioskKey, type BoardJob, type KioskJob, type KioskResult } from "@/lib/kiosk";
 
 async function call(fn: string, args: Record<string, unknown>): Promise<KioskResult> {
   const { data, error } = await kioskDb().rpc(fn, { p_key: await kioskKey(), ...args });
@@ -33,4 +33,12 @@ export async function loadJob(jobId: string): Promise<KioskJob | null> {
   const { data, error } = await kioskDb().rpc("kiosk_job", { p_key: await kioskKey(), p_job: jobId });
   if (error || !data?.ok) return null;
   return data as KioskJob;
+}
+
+// Calendar view: jobs due in / due out between two shop-local dates, plus anything overdue.
+export async function loadCalendar(from: string, to: string): Promise<{ today: string; jobs: BoardJob[] } | null> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to)) return null;
+  const { data, error } = await kioskDb().rpc("kiosk_calendar", { p_key: await kioskKey(), p_from: from, p_to: to });
+  if (error || !data?.ok) return null;
+  return { today: data.today, jobs: data.jobs };
 }

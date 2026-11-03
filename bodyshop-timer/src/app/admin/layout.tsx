@@ -10,6 +10,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const nav: NavItem[] = [
     { href: "/admin", label: "Dashboard" },
     { href: "/admin/jobs", label: "Jobs" },
+    { href: "/admin/calendar", label: "Calendar" },
     { href: "/admin/technicians", label: "Technicians" },
     { href: "/admin/technician-jobs", label: "Tech hours" },
     { href: "/admin/review", label: "Review", badge: toReview ?? 0 },

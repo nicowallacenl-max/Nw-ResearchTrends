@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: "Your repair · Autobodies", robots: 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#ffffff" };
 
 type Track = {
-  job_number: string; make: string | null; model: string | null; rego: string; stage: number; eta: string | null;
+  job_number: string; make: string | null; model: string | null; rego: string; stage: number; due_out: string | null;
   collected: boolean; created_at: string; stage_times: (string | null)[]; shop_phone: string | null; photos: { path: string; caption: string | null }[];
 };
 
@@ -43,7 +43,7 @@ export default async function Tracker({ params }: { params: Promise<{ token: str
   const ring = complete ? 264 : Math.round(((current + 0.5) / STAGE_COUNT) * 264);
   const stroke = complete ? "var(--complete)" : "var(--progress)";
   const nowLabel = complete ? (t.collected ? "COLLECTED" : "COMPLETE · READY TO COLLECT") : `NOW · ${TRACKER_STEPS[current].toUpperCase()}`;
-  const headline = complete ? (t.collected ? "Collected. Thanks!" : "Ready to collect") : t.eta ? `Ready ${etaDay(t.eta)}` : "Ready date to come";
+  const headline = complete ? (t.collected ? "Collected. Thanks!" : "Ready to collect") : t.due_out ? `Ready ${etaDay(t.due_out)}` : "Ready date to come";
 
   return (
     <main className="ab-shell grid-bg grid-bg-sm flex min-h-screen justify-center">
@@ -76,7 +76,7 @@ export default async function Tracker({ params }: { params: Promise<{ token: str
           {TRACKER_STEPS.map((name, i) => {
             const done = complete || i < current, now = !complete && i === current;
             const reached = t.stage_times[i + 1];
-            const when = done ? (reached ? weekday(reached) : "✓") : now ? "NOW" : i === STAGE_COUNT - 1 && t.eta ? weekday(`${t.eta}T12:00:00`) : "—";
+            const when = done ? (reached ? weekday(reached) : "✓") : now ? "NOW" : i === STAGE_COUNT - 1 && t.due_out ? weekday(`${t.due_out}T12:00:00`) : "—";
             const colour = complete ? "var(--complete)" : "var(--progress)";
             return (
               <li key={name} className="grid min-h-10 grid-cols-[22px_minmax(0,1fr)_auto] items-center gap-3">

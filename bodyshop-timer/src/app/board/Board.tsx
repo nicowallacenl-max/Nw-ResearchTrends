@@ -2,15 +2,17 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { completeWork, loadJob, pauseWork, startWork } from "./actions";
+import { completeWork, loadCalendar, loadJob, pauseWork, startWork } from "./actions";
 import { DamageScan } from "@/components/DamageScan";
+import { JobCalendar } from "@/components/JobCalendar";
 import { LineProgress } from "@/components/LineProgress";
 import { PhotoGallery } from "@/components/PhotoGallery";
 import { Logo } from "@/components/ui";
 import type { BoardData, BoardJob, BoardLine, KioskJob, KioskResult } from "@/lib/kiosk";
+import { calRange, shopToday, type CalMode } from "@/lib/calendar";
 import { photoUrl } from "@/lib/photos";
 import { isComplete, linesProgress, stageChip } from "@/lib/stages";
-import { activityTime, etaLabel } from "@/lib/time";
+import { activityTime, dateLabel } from "@/lib/time";
 import { durationSince } from "@/lib/types";
 
 // Wall board for a landscape tablet, in the Workshop OS style. Every control is a big tap target (>= 64px);
@@ -59,12 +61,41 @@ export function Board({ data }: { data: BoardData }) {
   const now = useNow(data.now);
   const tz = data.settings.time_zone;
 
+  // BOARD | CALENDAR toggle (remembered on this tablet). The calendar shows jobs by due in / due out date.
+  const [view, setView] = useState<"board" | "calendar">("board");
+  useEffect(() => {
+    try { if (localStorage.getItem("board.view") === "calendar") setView("calendar"); } catch {}
+  }, []);
+  const switchView = (v: "board" | "calendar") => {
+    setView(v);
+    try { localStorage.setItem("board.view", v); } catch {}
+  };
+  const today = shopToday(tz, new Date(now));
+  const [cal, setCal] = useState<{ mode: CalMode; anchor: string }>(() => ({ mode: "week", anchor: shopToday(tz, new Date(data.now)) }));
+  const [calJobs, setCalJobs] = useState<BoardJob[] | null>(null);
+  const refreshCalendar = useCallback(() => {
+    const { from, to } = calRange(cal.mode, cal.anchor);
+    loadCalendar(from, to).then((r) => r && setCalJobs(r.jobs)).catch(() => {});
+  }, [cal]);
+  useEffect(() => {
+    if (view !== "calendar") return;
+    refreshCalendar();
+    const t = setInterval(refreshCalendar, 30_000);
+    return () => clearInterval(t);
+  }, [view, refreshCalendar, data.now]);
+
   const techName = useMemo(() => new Map(data.technicians.map((t) => [t.id, t.name])), [data.technicians]);
+  // Jobs opened from the calendar can be ones the board doesn't list (finished, waiting for collection).
+  const allJobs = useMemo(() => {
+    const m = new Map(data.jobs.map((j) => [j.id, j]));
+    (calJobs ?? []).forEach((j) => { if (!m.has(j.id)) m.set(j.id, j); });
+    return [...m.values()];
+  }, [data.jobs, calJobs]);
   const lineById = useMemo(() => {
     const m = new Map<string, { line: BoardLine; job: BoardJob }>();
-    data.jobs.forEach((job) => job.lines.forEach((line) => m.set(line.id, { line, job })));
+    allJobs.forEach((job) => job.lines.forEach((line) => m.set(line.id, { line, job })));
     return m;
-  }, [data.jobs]);
+  }, [allJobs]);
 
   // Kiosk: keep the screen awake while the board is showing, and register the service worker so the
   // browser offers "Install app". Both are best-effort; unsupported browsers just skip them.
@@ -175,7 +206,7 @@ export function Board({ data }: { data: BoardData }) {
   }
 
   // ------------------------------------------------------------ render
-  const open = flow?.kind === "job" ? data.jobs.find((j) => j.id === flow.jobId) : undefined;
+  const open = flow?.kind === "job" ? allJobs.find((j) => j.id === flow.jobId) : undefined;
   const dialogOpen = !!flow;
 
   return (
@@ -187,17 +218,40 @@ export function Board({ data }: { data: BoardData }) {
           <span className="font-mono text-[12px] uppercase tracking-[.12em] text-muted">// Job board</span>
         </div>
         <span className="font-mono text-[15px] text-muted" suppressHydrationWarning>{clock(now, tz)}</span>
+        <div className="flex" role="group" aria-label="Board view">
+          {(["board", "calendar"] as const).map((v) => (
+            <button key={v} onClick={() => switchView(v)} aria-pressed={view === v}
+              className={`cut-sm min-h-16 cursor-pointer px-7 font-display text-[18px] font-bold uppercase tracking-[.1em] ${view === v ? "bg-ink text-white" : "border border-line bg-bg text-ink active:bg-bg-subtle"}`}>
+              {v}
+            </button>
+          ))}
+        </div>
         <button onClick={() => setFlow({ kind: "mine" })} className="cut-sm min-h-16 cursor-pointer bg-neon px-8 font-display text-[18px] font-bold uppercase tracking-[.1em] text-on-neon active:brightness-90">
           My work
         </button>
       </header>
 
+      {view === "calendar" ? (
+        <main inert={dialogOpen} className="flex-1 px-8 py-7 max-sm:px-4">
+          <JobCalendar
+            big
+            jobs={calJobs ?? []}
+            loading={calJobs === null}
+            today={today}
+            mode={cal.mode}
+            anchor={cal.anchor}
+            onNavigate={(mode, anchor) => { setCal({ mode, anchor }); setCalJobs(null); }}
+            onOpen={(j) => setFlow({ kind: "job", jobId: j.id })}
+          />
+        </main>
+      ) : (
       <main inert={dialogOpen} className="grid flex-1 auto-rows-min grid-cols-1 gap-4 px-8 py-7 max-sm:px-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {data.jobs.length === 0 && <p className="col-span-full mt-16 text-center font-display text-[22px] uppercase tracking-[.08em] text-muted">No open jobs. Add them in the office.</p>}
         {data.jobs.map((job) => (
           <JobTile key={job.id} job={job} data={data} now={now} name={name} onOpen={() => setFlow({ kind: "job", jobId: job.id })} />
         ))}
       </main>
+      )}
 
       {open && (
         <JobView
@@ -374,7 +428,8 @@ function JobView({
   const complete = isComplete(job.stage);
   const nextOwner = job.lines.find((l) => l.state !== "done" && l.owner_id)?.owner_id ?? null;
   const tech = running.length ? running.map((r) => firstName(name(r.technician_id))).join(", ") : nextOwner ? firstName(name(nextOwner)) : "—";
-  const eta = complete ? "Ready now" : etaLabel(job.eta, tz) ?? "Not set";
+  const dueOut = complete ? "Ready now" : dateLabel(job.due_out, tz) ?? "Not set";
+  const dueIn = dateLabel(job.due_in, tz) ?? "Not set";
   const insurer = detail?.job.insurer;
   const eyebrow = [`JOB ${job.job_number ?? ""}`, job.bay && `BAY ${job.bay}`, detail ? (insurer ? `INSURANCE: ${insurer}` : "PRIVATE") : null].filter(Boolean).join(" · ").toUpperCase();
   const RED = "var(--progress)", GREEN = "var(--complete)", TRACK = "var(--border)";
@@ -402,7 +457,8 @@ function JobView({
           </div>
           <div className="cut flex gap-7 border border-line bg-bg px-[22px] py-4">
             <Fact label="TECH">{tech}</Fact>
-            <Fact label="ETA" tone={complete ? "complete" : "accent"}>{eta}</Fact>
+            <Fact label="DUE IN">{dueIn}</Fact>
+            <Fact label="DUE OUT" tone={complete ? "complete" : "accent"}>{dueOut}</Fact>
             <Fact label="HOURS" tone={job.board_colour === "red" ? "progress" : undefined}>{hrs(job.actual_hours)} / {hrs(job.quoted_hours)}</Fact>
           </div>
         </div>

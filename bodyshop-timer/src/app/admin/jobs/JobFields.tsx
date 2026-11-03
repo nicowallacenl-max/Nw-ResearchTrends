@@ -16,7 +16,8 @@ export function JobFields({ job }: { job?: Partial<JobFull> }) {
       <Field label="Colour / paint code"><Input name="colour" defaultValue={job?.colour ?? ""} placeholder="e.g. Glacier White 040" /></Field>
       <Field label="VIN"><Input name="vin" defaultValue={job?.vin ?? ""} className="uppercase" /></Field>
       <Field label="Bay"><Input name="bay" defaultValue={job?.bay ?? ""} placeholder="e.g. 01" /></Field>
-      <Field label="ETA"><Input name="eta" type="date" defaultValue={job?.eta ?? ""} /></Field>
+      <Field label="Due in"><Input name="due_in" type="date" defaultValue={job?.due_in ?? ""} /></Field>
+      <Field label="Due out"><Input name="due_out" type="date" defaultValue={job?.due_out ?? ""} /></Field>
       <Field label="Customer name"><Input name="customer_name" defaultValue={job?.customer_name ?? ""} /></Field>
       <Field label="Customer phone"><Input name="customer_phone" type="tel" defaultValue={job?.customer_phone ?? ""} /></Field>
       <Field label="Insurer (blank = private)"><Input name="insurer" defaultValue={job?.insurer ?? ""} placeholder="e.g. Suncorp" /></Field>
