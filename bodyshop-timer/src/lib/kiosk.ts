@@ -16,7 +16,7 @@ export function kioskDb() {
   return createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: false } });
 }
 
-export type KioskResult = { ok: boolean; error?: string; detail?: string | null; role?: string; switched_from?: string | null; job_done?: boolean };
+export type KioskResult = { ok: boolean; error?: string; detail?: string | null; role?: string; switched_from?: string | null; job_done?: boolean; helper_done?: boolean };
 
 export type BoardData = {
   ok: true;

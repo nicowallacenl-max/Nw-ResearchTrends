@@ -161,7 +161,7 @@ export function Board({ data }: { data: BoardData }) {
       return;
     }
     let text = ERRORS[r.error ?? ""] ?? `Something went wrong (${r.error}).`;
-    if (r.error === "helpers_running") text = `${r.detail} still clocked on as helper. They need to pause first.`;
+    if (r.error === "helpers_running") text = `${r.detail} still clocked on as helper. They need to tap COMPLETE (finished helping) or PAUSE first.`;
     setToast({ text, tone: "err" });
     const next = onErr(r);
     if (next !== undefined) setFlow(next);
@@ -198,7 +198,10 @@ export function Board({ data }: { data: BoardData }) {
     const { line, job } = lineById.get(f.lineId)!;
     run(
       () => completeWork({ techId: f.techId, pin, lineId: f.lineId }),
-      (r) => (r.job_done ? `${job.rego} is finished. All items complete!` : `${line.description} complete. Next step unlocked.`),
+      (r) =>
+        r.helper_done
+          ? `${name(f.techId)} finished helping on ${line.description}. ${name(line.owner_id)} can complete it.`
+          : r.job_done ? `${job.rego} is finished. All items complete!` : `${line.description} complete. Next step unlocked.`,
       (r) => (r.error === "wrong_pin" ? f : backTo(f.jobId ?? job.id)),
       // stay on the job so the next unlocked line is right there (also when completing from My work)
       f.jobId ?? job.id,
@@ -318,7 +321,7 @@ export function Board({ data }: { data: BoardData }) {
         ))}
 
       {flow?.kind === "complete" && (
-        <PinPad who={name(flow.techId)} action={`Complete: ${lineById.get(flow.lineId)?.line.description}`} busy={busy}
+        <PinPad who={name(flow.techId)} action={`${lineById.get(flow.lineId)?.line.owner_id === flow.techId ? "Complete" : "Finished helping"}: ${lineById.get(flow.lineId)?.line.description}`} busy={busy}
           onCancel={() => setFlow(backTo(flow.jobId))} onSubmit={(pin) => submitComplete(flow, pin)} />
       )}
 
@@ -515,7 +518,7 @@ function JobView({
                         <span className="font-mono text-[22px] tabular-nums text-accent">{timer(data, r.started_at, now)}</span>
                         <div className="ml-auto flex gap-3">
                           <BigButton tone="hazard" onClick={() => onPause(r.technician_id)}>Pause</BigButton>
-                          {r.role === "owner" && <BigButton tone="complete" onClick={() => onComplete(line.id, r.technician_id)}>Complete</BigButton>}
+                          <BigButton tone="complete" onClick={() => onComplete(line.id, r.technician_id)}>Complete</BigButton>
                         </div>
                       </div>
                     ))}
@@ -586,7 +589,7 @@ function MyWork({
             <span className="font-mono text-[26px] tabular-nums text-accent">{timer(data, mine.started_at, now)}</span>
             <div className="ml-auto flex gap-3">
               <BigButton tone="hazard" onClick={onPause}>Pause</BigButton>
-              {mine.role === "owner" && <BigButton tone="complete" onClick={() => onComplete(current.line.id)}>Complete</BigButton>}
+              <BigButton tone="complete" onClick={() => onComplete(current.line.id)}>Complete</BigButton>
             </div>
           </div>
         </div>

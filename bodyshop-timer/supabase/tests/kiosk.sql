@@ -39,7 +39,7 @@ insert into r select 'again', kiosk_start(:'key', :sam, '1111', :repair1);
 insert into r select 'helper_noreason', kiosk_start(:'key', :tom, '3333', :repair1);
 insert into r select 'helper', kiosk_start(:'key', :tom, '3333', :repair1, 'two-person job');
 insert into r select 'complete_blocked', kiosk_complete(:'key', :sam, '1111', :repair1);
-insert into r select 'not_owner', kiosk_complete(:'key', :tom, '3333', :repair1);
+insert into r select 'not_owner', kiosk_complete(:'key', :jess, '2222', :repair1);
 insert into r select 'switch', kiosk_start(:'key', :tom, '3333', :strip2);
 insert into r select 'pause_noreason', kiosk_pause(:'key', :tom, '3333', null);
 insert into r select 'pause', kiosk_pause(:'key', :tom, '3333', :parts);
