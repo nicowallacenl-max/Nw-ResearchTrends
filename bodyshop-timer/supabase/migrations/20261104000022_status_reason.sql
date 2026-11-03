@@ -15,12 +15,14 @@ update public.jobs j set status_reason = case
   when exists (select 1 from public.work_segments w join public.quote_lines q on q.id = w.quote_line_id where q.job_id = j.id) then 'approved'
   else 'review' end::public.job_status_reason;
 
--- ---------------------------------------------------------------- drop the 7-step stage
-drop trigger if exists quote_lines_sync_stage on public.quote_lines;
-drop trigger if exists work_segments_sync_stage on public.work_segments;
-drop function if exists public.sync_stage_from_segment();
-drop function if exists public.sync_job_stage(uuid);
-drop function if exists public.derived_stage(uuid);
+-- ---------------------------------------------------------------- retire the 7-step stage
+-- Nothing reads jobs.stage any more. The stage triggers become no-ops (kept, not dropped, so this
+-- migration only adds/replaces; the unused column and helpers can be dropped in a later clean-up).
+create or replace function public.sync_stage_from_segment() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  return null;
+end $$;
 
 -- Keep status_reason, the internal work status and collected_at consistent, whoever changes what.
 create function public.jobs_sync_status_reason() returns trigger
@@ -65,8 +67,6 @@ begin
   end if;
   return null;
 end $$;
-
-drop function if exists public.stage_name(smallint);
 
 -- ---------------------------------------------------------------- board / kiosk / tracker payloads
 create or replace function public.board_job_json(j public.jobs) returns jsonb
@@ -164,8 +164,6 @@ begin
     'photos', coalesce((select jsonb_agg(jsonb_build_object('path', p.path, 'caption', p.caption) order by p.created_at) from public.job_photos p where p.job_id = j.id), '[]')
   );
 end $$;
-
-alter table public.jobs drop column stage;
 
 -- ---------------------------------------------------------------- techs can only clock on to approved jobs
 create or replace function public.kiosk_start(p_key text, p_tech uuid, p_pin text, p_line uuid,
