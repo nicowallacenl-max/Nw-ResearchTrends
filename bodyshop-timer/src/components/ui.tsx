@@ -1,5 +1,6 @@
 // Shared Workshop OS UI primitives (docs/mockups): cut-corner panels, mono labels, Chakra Petch headings.
 import type { ComponentProps, ReactNode } from "react";
+import { FlashMessage } from "./FlashMessage";
 
 export const mono = "font-mono uppercase tracking-[.14em]";
 export const display = "font-display uppercase";
@@ -98,16 +99,8 @@ export function Badge({ tone = "stone", children }: { tone?: Tone; children: Rea
 // Shows ?error= / ?ok= messages set by Server Actions after a redirect.
 export function Flash({ error, ok }: { error?: string; ok?: string }) {
   if (!error && !ok) return null;
-  return (
-    <div
-      role="status"
-      className={`cut-sm mb-6 border px-4 py-3 text-[14px] ${
-        error ? "border-progress bg-red-50 text-progress" : "border-complete bg-green-50 text-complete"
-      }`}
-    >
-      {error ?? ok}
-    </div>
-  );
+  // keyed so a new message (even the same text after another action) shows again
+  return <FlashMessage key={`${error ?? ""}|${ok ?? ""}|${Date.now()}`} error={error} ok={ok} />;
 }
 
 export const th = "px-[18px] py-3.5 text-left font-mono text-[11px] font-medium uppercase tracking-[.14em] text-muted";

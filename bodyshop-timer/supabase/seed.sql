@@ -17,11 +17,11 @@ insert into public.technicians (id, name, pin_hash, hourly_cost_rate, procedures
   ('00000000-0000-0000-0000-0000000000b3', 'Tom (all-rounder)',  crypt('3333', gen_salt('bf')), 35.00, '{strip,panel,repair,prep,refit}')
 on conflict do nothing;
 
-insert into public.jobs (id, ibodyshop_ref, rego, make, model, colour, status) values
-  ('00000000-0000-0000-0000-0000000000c1', 'IB-10001', '123ABC', 'Toyota', 'Camry',   'Silver', 'in_progress'),
-  ('00000000-0000-0000-0000-0000000000c2', 'IB-10002', '456DEF', 'Mazda',  'CX-5',    'Red',    'open'),
-  ('00000000-0000-0000-0000-0000000000c3', 'IB-10003', '789GHI', 'Ford',   'Ranger',  'White',  'open'),
-  ('00000000-0000-0000-0000-0000000000c4', 'IB-10004', '321JKL', 'Hyundai','i30',     'Blue',   'open')
+insert into public.jobs (id, ibodyshop_ref, rego, make, model, colour, status, status_reason) values
+  ('00000000-0000-0000-0000-0000000000c1', 'IB-10001', '123ABC', 'Toyota', 'Camry',   'Silver', 'in_progress', 'approved'),
+  ('00000000-0000-0000-0000-0000000000c2', 'IB-10002', '456DEF', 'Mazda',  'CX-5',    'Red',    'open', 'approved'),
+  ('00000000-0000-0000-0000-0000000000c3', 'IB-10003', '789GHI', 'Ford',   'Ranger',  'White',  'open', 'approved'),
+  ('00000000-0000-0000-0000-0000000000c4', 'IB-10004', '321JKL', 'Hyundai','i30',     'Blue',   'open', 'approved')
 on conflict do nothing;
 
 insert into public.quote_lines (id, job_id, description, procedure, quoted_hours, assigned_technician_id, completed_at) values

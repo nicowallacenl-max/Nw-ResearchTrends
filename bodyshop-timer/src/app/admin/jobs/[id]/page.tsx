@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
-  addDamage, addLine, addStandardLines, advanceStage, autoAssign, deleteDamage, deleteJob, deleteLine, deletePhoto, markCollected,
-  reopenLine, setJobStatus, stageBack, updateJob, updateLine,
+  addDamage, addLine, addStandardLines, autoAssign, deleteDamage, deleteJob, deleteLine, deletePhoto,
+  reopenLine, updateJob, updateLine,
 } from "../actions";
 import { JobFields } from "../JobFields";
+import { StatusSelect } from "./StatusSelect";
 import { CopyLink } from "@/components/CopyLink";
 import { DamageScan } from "@/components/DamageScan";
 import { LineProgress } from "@/components/LineProgress";
@@ -14,10 +15,9 @@ import { Badge, Button, Card, Field, Flash, Input, Select, buttonCls, td, th, th
 import { requireAdmin } from "@/lib/auth";
 import { photoUrl } from "@/lib/photos";
 import { activityTime, dateLabel } from "@/lib/time";
-import { COMPLETE, STAGE_COUNT, STAGES, isComplete } from "@/lib/stages";
 import {
-  JOB_STATUS_LABEL, PROCEDURE_LABEL, PROCEDURES, SUBSTATUS_TONE, durationSince, substatusLabel,
-  type JobFull, type JobSubstatus, type Procedure, type QuoteLine, type Technician,
+  PROCEDURE_LABEL, PROCEDURES, STATUS_REASON_LABEL, STATUS_REASON_TONE, SUBSTATUS_TONE, durationSince, isActive, substatusLabel,
+  type JobFull, type StatusReason, type JobSubstatus, type Procedure, type QuoteLine, type Technician,
 } from "@/lib/types";
 import { DAMAGE_TYPES, SEVERITIES, panelLabel, panelsFor, type Damage } from "@/lib/vehicle";
 
@@ -80,8 +80,16 @@ export default async function JobPage({ params, searchParams }: { params: Promis
   const pics = photos ?? [];
   const panels = panelsFor(job.body_type);
 
-  const complete = isComplete(job.stage);
-  const current = Math.min(job.stage, COMPLETE);
+  const allDone = sorted.length > 0 && sorted.every((l) => l.completed_at);
+  const complete = allDone || job.status_reason === "completed" || job.status_reason === "picked_up";
+  const runningCount = (running ?? []).length;
+  // Which status reasons can't be picked right now, and why (the server checks the same rules).
+  const blocked: Partial<Record<StatusReason, string>> = {
+    review: runningCount ? "someone clocked on" : allDone ? "all lines done" : undefined,
+    approved: allDone ? "all lines done" : !sorted.some((l) => l.assigned_technician_id) ? "needs a line owner" : !job.due_in ? "needs Due in date" : undefined,
+    completed: allDone ? undefined : "automatic",
+    picked_up: runningCount ? "someone clocked on" : undefined,
+  };
   const shortName = (n?: string) => (n ? n.replace(/\s*\(.*\)/, "").replace(/^(\S+)\s+(\S).*$/, "$1 $2.") : "—");
   const runningTech = (running ?? [])[0]?.technician_id as string | undefined;
   const nextOwner = sorted.find((l) => !l.completed_at && l.assigned_technician_id)?.assigned_technician_id ?? undefined;
@@ -100,17 +108,9 @@ export default async function JobPage({ params, searchParams }: { params: Promis
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
         </Link>
         <span className="grow font-mono text-[12px] uppercase tracking-[.12em] text-muted">// JOBS / {job.job_number}</span>
-        <span className="font-mono text-[12px] uppercase tracking-[.12em] text-muted" title="Job stage (shown to the customer on the tracker)">
-          Stage · <b className={complete ? "font-medium text-complete" : "font-medium text-ink"}>{complete ? "Complete" : STAGES[current]}</b>
+        <span className="font-mono text-[12px] uppercase tracking-[.12em] text-muted">
+          Status · <b className={isActive(job.status_reason) ? "font-medium text-ink" : "font-medium text-muted"}>{isActive(job.status_reason) ? "Active" : "Inactive"}</b>
         </span>
-        <form action={advanceStage}>
-          <input type="hidden" name="id" value={job.id} />
-          {complete ? (
-            <button type="button" disabled className={`${buttonCls("complete")} disabled:opacity-100`}>Job complete</button>
-          ) : (
-            <Button>{current === STAGE_COUNT - 1 ? "Mark complete" : "Advance stage"}</Button>
-          )}
-        </form>
       </div>
       <Flash error={error} ok={ok} />
 
@@ -125,12 +125,19 @@ export default async function JobPage({ params, searchParams }: { params: Promis
           <div className="flex flex-col gap-1"><span className="font-mono text-[11px] tracking-[.14em] text-muted">TECH</span><span className="font-display text-[18px] font-semibold">{tech}</span></div>
           <div className="flex flex-col gap-1"><span className="font-mono text-[11px] tracking-[.14em] text-muted">DUE IN</span><span className="font-display text-[18px] font-semibold">{dueIn}</span></div>
           <div className="flex flex-col gap-1"><span className="font-mono text-[11px] tracking-[.14em] text-muted">DUE OUT</span><span className={`font-display text-[18px] font-semibold ${complete ? "text-complete" : "text-accent"}`}>{dueOut}</span></div>
+          <div className="flex flex-col gap-1">
+            <span className="font-mono text-[11px] tracking-[.14em] text-muted">STATUS</span>
+            <StatusSelect jobId={job.id} value={job.status_reason} disabled={blocked} />
+          </div>
           <div className="flex flex-col gap-1"><span className="font-mono text-[11px] tracking-[.14em] text-muted">ESTIMATE</span><span className="font-display text-[18px] font-semibold">{priced.length ? money(totalInc) : "—"}</span></div>
         </div>
       </div>
 
       {/* progress = job lines, in the same order as the list below */}
-      <LineProgress lines={sorted.map((l) => ({ id: l.id, description: l.description, procedure: l.procedure, state: state.get(l.id) ?? "ready" }))} />
+      <LineProgress lines={sorted.map((l) => ({ id: l.id, description: l.description, procedure: l.procedure, state: state.get(l.id) ?? "ready" }))}
+        badge={sub && sub.substatus !== "done" && isActive(job.status_reason)
+          ? <Badge tone={SUBSTATUS_TONE[sub.substatus] === "blue" ? "neon" : SUBSTATUS_TONE[sub.substatus]}>{substatusLabel(sub)}{(sub.substatus === "paused" || sub.substatus === "working") && sub.since ? ` · ${durationSince(sub.since)}` : ""}</Badge>
+          : null} />
 
       <div className="flex flex-wrap gap-6">
         {/* damage scan + photos */}
@@ -184,8 +191,7 @@ export default async function JobPage({ params, searchParams }: { params: Promis
       <h2 className="m-0 mt-4 font-display text-[24px] font-bold uppercase tracking-[.08em]">Manage job</h2>
 
       <Card title={`Quote lines · ${quotedTotal.toFixed(1)} h quoted`}
-        aside={<div className="flex flex-wrap items-center gap-2"><Badge tone={job.status === "done" ? "stone" : "blue"}>{JOB_STATUS_LABEL[job.status]}</Badge>
-          {sub && sub.substatus !== "done" && <Badge tone={SUBSTATUS_TONE[sub.substatus] === "blue" ? "neon" : SUBSTATUS_TONE[sub.substatus]}>{substatusLabel(sub)}{(sub.substatus === "paused" || sub.substatus === "working") && sub.since ? ` · ${durationSince(sub.since)}` : ""}</Badge>}</div>}>
+        aside={<Badge tone={STATUS_REASON_TONE[job.status_reason]}>{STATUS_REASON_LABEL[job.status_reason]}</Badge>}>
         <p className="mb-4 text-muted">Procedures unlock in order: Strip → Panel → Repair → Prep → Paint → Refit. The assigned technician owns the line and is the only one who can complete it. Prices are ex GST.</p>
         {sorted.length > 0 && (
           <div className="mb-6 overflow-x-auto">
@@ -326,17 +332,8 @@ export default async function JobPage({ params, searchParams }: { params: Promis
             <CopyLink path={`/track/${job.track_token}`} label="Copy tracker link" />
             <span className="text-[12px] text-muted">Send this link to the customer. It shows progress and photos only, no prices or claim details.</span>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <form action={stageBack}><input type="hidden" name="id" value={job.id} /><Button variant="secondary" disabled={job.stage <= 0}>Back a stage</Button></form>
-            <form action={setJobStatus}>
-              <input type="hidden" name="id" value={job.id} />
-              {job.status === "done" ? <Button variant="secondary" name="status" value="in_progress">Reopen job</Button> : <Button variant="secondary" name="status" value="done">Mark all work done</Button>}
-            </form>
-            {!job.collected_at ? (
-              <form action={markCollected}><input type="hidden" name="id" value={job.id} /><Button variant="secondary">Mark collected</Button></form>
-            ) : (
-              <Badge tone="green">Collected {new Date(job.collected_at).toLocaleDateString("en-AU", { timeZone: tz })}</Badge>
-            )}
+          <div className="flex flex-wrap items-center gap-3">
+            {job.collected_at && <Badge tone="blue">Picked up {new Date(job.collected_at).toLocaleDateString("en-AU", { timeZone: tz })}</Badge>}
             <form action={deleteJob} className="ml-auto"><input type="hidden" name="id" value={job.id} /><Button variant="danger" title="Only possible if no time has been logged">Delete job</Button></form>
           </div>
         </div>

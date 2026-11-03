@@ -11,7 +11,7 @@ import { Logo } from "@/components/ui";
 import type { BoardData, BoardJob, BoardLine, KioskJob, KioskResult } from "@/lib/kiosk";
 import { calRange, shopToday, type CalMode } from "@/lib/calendar";
 import { photoUrl } from "@/lib/photos";
-import { isComplete, linesProgress, stageChip } from "@/lib/stages";
+import { jobChip, linesProgress } from "@/lib/stages";
 import { activityTime, dateLabel } from "@/lib/time";
 import { durationSince, PROCEDURE_LABEL } from "@/lib/types";
 
@@ -39,6 +39,7 @@ const ERRORS: Record<string, string> = {
   owner_locked: "The owner's PIN is locked after too many tries.",
   owner_inactive: "The owner of this item isn't active. Ask the office to reassign it.",
   not_owner: "Only the item's owner can complete it.",
+  job_not_approved: "This job isn't approved yet. Ask the office.",
   reason_required: "Pick a delay reason.",
   not_running: "You're not clocked on to anything.",
   not_found: "That item no longer exists. The board will refresh.",
@@ -359,8 +360,8 @@ function JobTile({ job, data, now, name, onOpen }: { job: BoardJob; data: BoardD
   // Owners first, helpers marked "+1".
   const running = data.running.filter((r) => lineIds.has(r.line_id)).sort((a, b) => (a.role === b.role ? 0 : a.role === "owner" ? -1 : 1));
   const paused = running.length === 0 && job.substatus === "paused";
-  const chip = stageChip(job.stage, paused ? job.substatus_reason : null);
-  const done = isComplete(job.stage);
+  const chip = jobChip(job.lines, paused ? job.substatus_reason : null);
+  const done = linesProgress(job.lines.map((l) => l.state)).allDone;
   const border = done ? "border-complete" : chip.label === "PARTS" ? "border-hazard" : job.board_colour === "red" ? "border-progress" : "border-line";
   return (
     <button onClick={onOpen} className={`cut flex cursor-pointer flex-col gap-3 border bg-bg px-5 py-[18px] text-left active:bg-bg-subtle ${border}`}>
@@ -424,11 +425,11 @@ function JobView({
   }, [refresh]);
   // re-fetch whenever the board data changes (e.g. someone clocks on elsewhere)
   const runningKey = data.running.map((r) => r.id).join();
-  useEffect(() => { refresh(); }, [runningKey, job.stage, refresh]);
+  useEffect(() => { refresh(); }, [runningKey, job.status_reason, refresh]);
 
   const lineIds = new Set(job.lines.map((l) => l.id));
   const running = data.running.filter((r) => lineIds.has(r.line_id));
-  const complete = isComplete(job.stage);
+  const complete = linesProgress(job.lines.map((l) => l.state)).allDone;
   const nextOwner = job.lines.find((l) => l.state !== "done" && l.owner_id)?.owner_id ?? null;
   const tech = running.length ? running.map((r) => firstName(name(r.technician_id))).join(", ") : nextOwner ? firstName(name(nextOwner)) : "—";
   const dueOut = complete ? "Ready now" : dateLabel(job.due_out, tz) ?? "Not set";

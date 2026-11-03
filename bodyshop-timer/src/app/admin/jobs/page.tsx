@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Badge, Button, Card, Flash, PageHeader, td, th , theadCls } from "@/components/ui";
 import { requireAdmin } from "@/lib/auth";
-import { JOB_STATUS_LABEL, SUBSTATUS_TONE, durationSince, substatusLabel, type JobStatus, type JobSubstatus } from "@/lib/types";
+import { STATUS_REASON_LABEL, STATUS_REASON_TONE, SUBSTATUS_TONE, durationSince, isActive, substatusLabel, type JobSubstatus, type StatusReason } from "@/lib/types";
 
 const COLOUR_TONE = { green: "green", amber: "amber", red: "red" } as const;
 const fmt = (n: number | null) => (n === null ? "–" : Number(n).toFixed(1));
@@ -10,8 +10,10 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
   const { error, ok, show, q: query } = await searchParams;
   const { supabase } = await requireAdmin();
 
-  let q = supabase.from("jobs").select("id, job_number, rego, make, model, colour, ibodyshop_ref, status, created_at").order("created_at", { ascending: false });
-  if (show !== "all" && !query) q = q.neq("status", "done");
+  let q = supabase.from("jobs").select("id, job_number, rego, make, model, colour, ibodyshop_ref, status_reason, created_at").order("created_at", { ascending: false });
+  // Active = not picked up yet; Inactive = picked up. Search looks across everything.
+  if (!query && show === "inactive") q = q.eq("status_reason", "picked_up");
+  else if (!query && show !== "all") q = q.neq("status_reason", "picked_up");
   const term = (query ?? "").trim().replace(/[,%()]/g, " ");
   if (term) q = q.or(`rego.ilike.%${term}%,job_number.ilike.%${term}%,customer_name.ilike.%${term}%,make.ilike.%${term}%,model.ilike.%${term}%`);
   const now = Date.now();
@@ -23,7 +25,7 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
   const byJob = new Map((summary ?? []).map((s) => [s.job_id, s]));
   const subByJob = new Map((subs ?? []).map((s) => [s.job_id, s]));
   const jobs = show === "paused" ? (allJobs ?? []).filter((j) => subByJob.get(j.id)?.substatus === "paused") : allJobs;
-  const pausedCount = (subs ?? []).filter((s) => s.substatus === "paused").length;
+  const pausedCount = show === "paused" ? (jobs ?? []).length : (show === "inactive" || show === "all" ? null : (allJobs ?? []).filter((j) => subByJob.get(j.id)?.substatus === "paused").length);
 
   return (
     <>
@@ -35,6 +37,8 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
             Paused{pausedCount ? ` (${pausedCount})` : ""}
           </Link>
           <span className="text-stone-300">|</span>
+          <Link href="/admin/jobs?show=inactive" className={show === "inactive" ? "font-semibold" : "text-stone-500"}>Inactive</Link>
+          <span className="text-stone-300">|</span>
           <Link href="/admin/jobs?show=all" className={show === "all" ? "font-semibold" : "text-stone-500"}>All</Link>
         </div>
       </PageHeader>
@@ -43,7 +47,7 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
 
       <Card>
         {!jobs?.length ? (
-          <p className="text-muted">{term ? `No jobs match “${term}”.` : show === "paused" ? "No paused jobs." : "No jobs yet."}</p>
+          <p className="text-muted">{term ? `No jobs match “${term}”.` : show === "paused" ? "No paused jobs." : show === "inactive" ? "No picked-up jobs yet." : "No jobs yet."}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -54,7 +58,8 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
                   <th className={th}>Vehicle</th>
                   <th className={th}>iBodyshop</th>
                   <th className={th}>Status</th>
-                  <th className={th}>Substatus</th>
+                  <th className={th}>Status reason</th>
+                  <th className={th}>Repair progress</th>
                   <th className={`${th} text-right`}>Quoted h</th>
                   <th className={`${th} text-right`}>Actual h</th>
                   <th className={th}></th>
@@ -71,13 +76,14 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
                       </td>
                       <td className={td}>{[j.colour, j.make, j.model].filter(Boolean).join(" ") || "–"}</td>
                       <td className={td}>{j.ibodyshop_ref ?? "–"}</td>
+                      <td className={td}>{isActive(j.status_reason as StatusReason) ? "Active" : <span className="text-muted">Inactive</span>}</td>
                       <td className={td}>
-                        <Badge tone={j.status === "done" ? "stone" : "blue"}>{JOB_STATUS_LABEL[j.status as JobStatus]}</Badge>
+                        <Badge tone={STATUS_REASON_TONE[j.status_reason as StatusReason]}>{STATUS_REASON_LABEL[j.status_reason as StatusReason]}</Badge>
                       </td>
                       <td className={td}>
                         {(() => {
                           const sub = subByJob.get(j.id);
-                          if (!sub) return "–";
+                          if (!sub || !isActive(j.status_reason as StatusReason)) return "–";
                           return (
                             <>
                               <Badge tone={SUBSTATUS_TONE[sub.substatus]}>{substatusLabel(sub)}</Badge>
