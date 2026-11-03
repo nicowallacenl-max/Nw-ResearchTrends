@@ -58,6 +58,7 @@ export default async function WorkshopFloor() {
   const linesOf = (id: string) => (lineStates ?? []).filter((l) => l.job_id === id)
     .sort((a, b) => PROCEDURES.indexOf(a.procedure as Procedure) - PROCEDURES.indexOf(b.procedure as Procedure)) as { procedure: string; state: string }[];
   const isReady = (j: Row) => j.status_reason === "completed";
+  const hasTime = (id: string) => !!sub.get(id) && sub.get(id)!.substatus !== "not_started";
   const active = all.filter((j) => !isReady(j));
   const ready = all.filter(isReady);
   // In the paint booth: approved jobs whose next open line is prep or paint.
@@ -92,7 +93,7 @@ export default async function WorkshopFloor() {
             {bays.map((j) => {
               const done = isReady(j);
               const p = partsWait(j.id);
-              const chip = jobChip(linesOf(j.id), p?.reason);
+              const chip = jobChip(linesOf(j.id), p?.reason, hasTime(j.id));
               const eta = done ? "Complete · ready to collect" : p ? `Waiting on parts · ${durationSince(p.since, now)}` : etaText(j.due_out, tz) ? `Due out ${etaText(j.due_out, tz)}` : "No due-out date";
               return (
                 <Link key={j.id} href={`/admin/jobs/${j.id}`}
@@ -127,7 +128,7 @@ export default async function WorkshopFloor() {
             </thead>
             <tbody>
               {all.map((j) => {
-                const chip = jobChip(linesOf(j.id), partsWait(j.id)?.reason);
+                const chip = jobChip(linesOf(j.id), partsWait(j.id)?.reason, hasTime(j.id));
                 return (
                   <tr key={j.id}>
                     <td className={`${td} font-mono`}><Link href={`/admin/jobs/${j.id}`}>{j.job_number}</Link></td>

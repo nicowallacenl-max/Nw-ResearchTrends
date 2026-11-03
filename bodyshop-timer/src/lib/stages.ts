@@ -18,13 +18,14 @@ export function currentProcedure(lines: { procedure: string; state: string }[]):
 
 export type ChipTone = "stone" | "green" | "amber" | "neon";
 // Chip for bays, the pipeline and board tiles: READY (all lines done) / PARTS (paused waiting on parts) /
-// NOT STARTED (nothing done or running yet) / the current procedure (e.g. PAINT).
-export function jobChip(lines: { procedure: string; state: string }[], pausedFor?: string | null): { label: string; tone: ChipTone } {
+// NOT STARTED (no time logged and no line done) / the current procedure (e.g. PAINT).
+// hasTime: any time logged on the job (e.g. timer stopped at knock-off), so it counts as started.
+export function jobChip(lines: { procedure: string; state: string }[], pausedFor?: string | null, hasTime = false): { label: string; tone: ChipTone } {
   const p = linesProgress(lines.map((l) => l.state));
   if (p.allDone) return { label: "READY", tone: "green" };
   if (pausedFor && /part/i.test(pausedFor)) return { label: "PARTS", tone: "amber" };
   if (!p.total) return { label: "NO LINES", tone: "stone" };
-  const started = lines.some((l) => l.state === "done" || l.state === "running" || l.state === "paused");
+  const started = hasTime || lines.some((l) => l.state === "done" || l.state === "running" || l.state === "paused");
   if (!started) return { label: "NOT STARTED", tone: "stone" };
   const cur = currentProcedure(lines);
   return { label: (cur ? PROCEDURE_LABEL[cur] : "In progress").toUpperCase(), tone: "neon" };

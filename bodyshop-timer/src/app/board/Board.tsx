@@ -360,7 +360,7 @@ function JobTile({ job, data, now, name, onOpen }: { job: BoardJob; data: BoardD
   // Owners first, helpers marked "+1".
   const running = data.running.filter((r) => lineIds.has(r.line_id)).sort((a, b) => (a.role === b.role ? 0 : a.role === "owner" ? -1 : 1));
   const paused = running.length === 0 && job.substatus === "paused";
-  const chip = jobChip(job.lines, paused ? job.substatus_reason : null);
+  const chip = jobChip(job.lines, paused ? job.substatus_reason : null, job.substatus !== "not_started");
   const done = linesProgress(job.lines.map((l) => l.state)).allDone;
   const border = done ? "border-complete" : chip.label === "PARTS" ? "border-hazard" : job.board_colour === "red" ? "border-progress" : "border-line";
   return (
