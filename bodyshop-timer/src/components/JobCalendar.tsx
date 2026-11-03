@@ -55,9 +55,9 @@ export function JobCalendar({ jobs, today, mode, anchor, onNavigate, onOpen, big
           ))}
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <NavArrow big={big} dir="left" label={mode === "day" ? "Previous day" : "Previous week"} onClick={() => onNavigate(mode, addDays(anchor, mode === "day" ? -1 : -7))} />
+          <NavArrow big={big} dir="left" label={mode === "day" ? "Back one day" : "Back one week"} onClick={() => onNavigate(mode, addDays(anchor, mode === "day" ? -1 : -7))} />
           <span className={`min-w-44 text-center font-display font-bold uppercase tracking-[.08em] ${big ? "text-[20px]" : "text-[16px]"}`}>{title}</span>
-          <NavArrow big={big} dir="right" label={mode === "day" ? "Next day" : "Next week"} onClick={() => onNavigate(mode, addDays(anchor, mode === "day" ? 1 : 7))} />
+          <NavArrow big={big} dir="right" label={mode === "day" ? "Forward one day" : "Forward one week"} onClick={() => onNavigate(mode, addDays(anchor, mode === "day" ? 1 : 7))} />
         </div>
       </div>
 
