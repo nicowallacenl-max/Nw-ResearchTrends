@@ -12,9 +12,9 @@ insert into public.delay_reasons (id, label, system) values
 on conflict do nothing;
 
 insert into public.technicians (id, name, pin_hash, hourly_cost_rate, procedures) values
-  ('00000000-0000-0000-0000-0000000000b1', 'Sam (panel beater)', crypt('1111', gen_salt('bf')), 38.00, '{strip,repair,refit}'),
+  ('00000000-0000-0000-0000-0000000000b1', 'Sam (panel beater)', crypt('1111', gen_salt('bf')), 38.00, '{strip,panel,repair,refit}'),
   ('00000000-0000-0000-0000-0000000000b2', 'Jess (painter)',     crypt('2222', gen_salt('bf')), 42.00, '{prep,paint}'),
-  ('00000000-0000-0000-0000-0000000000b3', 'Tom (all-rounder)',  crypt('3333', gen_salt('bf')), 35.00, '{strip,repair,prep,refit}')
+  ('00000000-0000-0000-0000-0000000000b3', 'Tom (all-rounder)',  crypt('3333', gen_salt('bf')), 35.00, '{strip,panel,repair,prep,refit}')
 on conflict do nothing;
 
 insert into public.jobs (id, ibodyshop_ref, rego, make, model, colour, status) values

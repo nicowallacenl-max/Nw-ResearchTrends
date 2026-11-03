@@ -13,12 +13,12 @@ import { calRange, shopToday, type CalMode } from "@/lib/calendar";
 import { photoUrl } from "@/lib/photos";
 import { isComplete, linesProgress, stageChip } from "@/lib/stages";
 import { activityTime, dateLabel } from "@/lib/time";
-import { durationSince } from "@/lib/types";
+import { durationSince, PROCEDURE_LABEL } from "@/lib/types";
 
 // Wall board for a landscape tablet, in the Workshop OS style. Every control is a big tap target (>= 64px);
 // the only text input is the PIN pad. Tapping a job opens the full job view.
 
-const PROC: Record<BoardLine["procedure"], string> = { strip: "Strip", repair: "Repair", prep: "Prep", paint: "Paint", refit: "Refit" };
+const PROC: Record<BoardLine["procedure"], string> = PROCEDURE_LABEL;
 const HELPER_REASONS = ["Two-person job", "Behind schedule", "Owner absent", "Training"];
 const REFRESH_MS = 15_000;
 const JOB_REFRESH_MS = 10_000;

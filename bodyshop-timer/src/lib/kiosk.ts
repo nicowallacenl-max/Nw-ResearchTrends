@@ -2,6 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { createClient } from "@supabase/supabase-js";
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "@/lib/supabase/config";
+import type { Procedure } from "@/lib/types";
 
 // The wall tablet holds a device key in this httpOnly cookie (set when an admin pairs it).
 export const KIOSK_COOKIE = "kiosk_key";
@@ -63,7 +64,7 @@ export type KioskJob = {
 export type BoardLine = {
   id: string;
   description: string;
-  procedure: "strip" | "repair" | "prep" | "paint" | "refit";
+  procedure: Procedure;
   quoted_hours: number;
   owner_id: string | null;
   state: "ready" | "locked" | "running" | "paused" | "done";

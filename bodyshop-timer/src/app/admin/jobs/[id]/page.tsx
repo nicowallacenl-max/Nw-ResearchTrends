@@ -186,7 +186,7 @@ export default async function JobPage({ params, searchParams }: { params: Promis
       <Card title={`Quote lines · ${quotedTotal.toFixed(1)} h quoted`}
         aside={<div className="flex flex-wrap items-center gap-2"><Badge tone={job.status === "done" ? "stone" : "blue"}>{JOB_STATUS_LABEL[job.status]}</Badge>
           {sub && sub.substatus !== "done" && <Badge tone={SUBSTATUS_TONE[sub.substatus] === "blue" ? "neon" : SUBSTATUS_TONE[sub.substatus]}>{substatusLabel(sub)}{(sub.substatus === "paused" || sub.substatus === "working") && sub.since ? ` · ${durationSince(sub.since)}` : ""}</Badge>}</div>}>
-        <p className="mb-4 text-muted">Procedures unlock in order: Strip → Repair → Prep → Paint → Refit. The assigned technician owns the line and is the only one who can complete it. Prices are ex GST.</p>
+        <p className="mb-4 text-muted">Procedures unlock in order: Strip → Panel → Repair → Prep → Paint → Refit. The assigned technician owns the line and is the only one who can complete it. Prices are ex GST.</p>
         {sorted.length > 0 && (
           <div className="mb-6 overflow-x-auto">
             <table className="w-full min-w-[900px] border-collapse">
@@ -241,7 +241,7 @@ export default async function JobPage({ params, searchParams }: { params: Promis
             <input type="hidden" name="job_id" value={job.id} />
             <span>No quote lines yet.</span>
             <Button>Add standard lines</Button>
-            <span className="text-muted">Strip → Repair → Prep → Paint → Refit at 0 h, owners auto-assigned.</span>
+            <span className="text-muted">Strip → Panel → Repair → Prep → Paint → Refit at 0 h, owners auto-assigned.</span>
           </form>
         )}
         {needsHours > 0 && (
