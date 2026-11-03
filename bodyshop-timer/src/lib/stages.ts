@@ -21,3 +21,13 @@ export function stageChip(stage: number, pausedFor?: string | null): { label: st
   if (stage === 0) return { label: "ASSESS", tone: "stone" };
   return { label: STAGES[stage].toUpperCase(), tone: "neon" };
 }
+
+// ---------------------------------------------------------------- progress = job lines
+// The progress bars follow the job lines: one segment per line. Done = full, running/paused = half.
+export type LineState = "done" | "running" | "paused" | "ready" | "locked";
+export function linesProgress(states: string[]) {
+  const total = states.length;
+  const done = states.filter((s) => s === "done").length;
+  const half = states.filter((s) => s === "running" || s === "paused").length;
+  return { total, done, allDone: total > 0 && done === total, pct: total ? Math.round(((done + half * 0.5) / total) * 100) : 0 };
+}

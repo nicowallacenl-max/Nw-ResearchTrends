@@ -7,6 +7,7 @@ import {
 import { JobFields } from "../JobFields";
 import { CopyLink } from "@/components/CopyLink";
 import { DamageScan } from "@/components/DamageScan";
+import { LineProgress } from "@/components/LineProgress";
 import { PhotoGallery } from "@/components/PhotoGallery";
 import { PhotoUpload } from "@/components/PhotoUpload";
 import { Badge, Button, Card, Field, Flash, Input, Select, buttonCls, td, th, theadCls } from "@/components/ui";
@@ -88,7 +89,6 @@ export default async function JobPage({ params, searchParams }: { params: Promis
 
   const eyebrow = [`JOB ${job.job_number ?? ""}`, job.bay && `BAY ${job.bay}`, `${job.insurer ? `INSURANCE: ${job.insurer}` : "PRIVATE"}`].filter(Boolean).join(" · ").toUpperCase();
   const subline = [job.rego, job.colour, job.vin].filter(Boolean).join(" · ");
-  const RED = "var(--progress)", GREEN = "var(--complete)", TRACK = "var(--border)";
 
   return (
     <div className="mx-auto flex max-w-[1376px] flex-col gap-6">
@@ -98,6 +98,9 @@ export default async function JobPage({ params, searchParams }: { params: Promis
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
         </Link>
         <span className="grow font-mono text-[12px] uppercase tracking-[.12em] text-muted">// JOBS / {job.job_number}</span>
+        <span className="font-mono text-[12px] uppercase tracking-[.12em] text-muted" title="Job stage (shown to the customer on the tracker)">
+          Stage · <b className={complete ? "font-medium text-complete" : "font-medium text-ink"}>{complete ? "Complete" : STAGES[current]}</b>
+        </span>
         <form action={advanceStage}>
           <input type="hidden" name="id" value={job.id} />
           {complete ? (
@@ -123,29 +126,8 @@ export default async function JobPage({ params, searchParams }: { params: Promis
         </div>
       </div>
 
-      {/* stage progress */}
-      <section aria-label="Repair stages" className={`cut bg-bg px-6 py-[22px] ${complete ? "border border-complete shadow-[0_0_24px_rgba(22,163,74,.18)]" : "border border-line"}`}>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-          <span className="font-mono text-[11px] tracking-[.16em] text-muted">REPAIR PROGRESS</span>
-          <span className={`font-mono text-[12px] font-medium tracking-[.14em] ${complete ? "text-complete" : "text-progress"}`}>
-            {complete ? "COMPLETE · READY TO COLLECT" : `IN PROGRESS · ${current} OF ${STAGE_COUNT} DONE`}
-          </span>
-        </div>
-        <ol className="m-0 grid list-none grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-2 p-0">
-          {STAGES.map((name, i) => {
-            const done = i < current, now_ = i === current && !complete;
-            const bg = complete || done ? (complete ? GREEN : RED) : now_ ? `linear-gradient(90deg,${RED} 50%,${TRACK} 50%)` : TRACK;
-            const glow = complete ? "0 0 10px rgba(22,163,74,.45)" : done || now_ ? "0 0 10px rgba(225,29,46,.35)" : "none";
-            return (
-              <li key={name} className="flex flex-col gap-2.5">
-                <div className="h-2 transition-[background] duration-300" style={{ background: bg, boxShadow: glow }} />
-                <span className="font-mono text-[11px] tracking-[.14em] text-muted">{String(i + 1).padStart(2, "0")}{complete || done ? " · DONE" : now_ ? " · NOW" : ""}</span>
-                <span className={`font-display text-[15px] font-semibold uppercase tracking-[.06em] ${complete ? "text-complete" : now_ ? "text-progress" : done ? "text-ink" : "text-muted"}`}>{name}</span>
-              </li>
-            );
-          })}
-        </ol>
-      </section>
+      {/* progress = job lines, in the same order as the list below */}
+      <LineProgress lines={sorted.map((l) => ({ id: l.id, description: l.description, procedure: l.procedure, state: state.get(l.id) ?? "ready" }))} />
 
       <div className="flex flex-wrap gap-6">
         {/* damage scan + photos */}

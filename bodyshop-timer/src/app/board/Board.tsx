@@ -4,11 +4,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { completeWork, loadJob, pauseWork, startWork } from "./actions";
 import { DamageScan } from "@/components/DamageScan";
+import { LineProgress } from "@/components/LineProgress";
 import { PhotoGallery } from "@/components/PhotoGallery";
 import { Logo } from "@/components/ui";
 import type { BoardData, BoardJob, BoardLine, KioskJob, KioskResult } from "@/lib/kiosk";
 import { photoUrl } from "@/lib/photos";
-import { COMPLETE, STAGE_COUNT, STAGES, isComplete, progressPct, stageChip } from "@/lib/stages";
+import { isComplete, linesProgress, stageChip } from "@/lib/stages";
 import { activityTime, etaLabel } from "@/lib/time";
 import { durationSince } from "@/lib/types";
 
@@ -334,7 +335,10 @@ function JobTile({ job, data, now, name, onOpen }: { job: BoardJob; data: BoardD
           ))
         )}
       </div>
-      <div className="h-1.5 bg-line"><div className={`h-1.5 ${done ? "bg-complete" : "bg-progress"}`} style={{ width: `${progressPct(job.stage)}%` }} /></div>
+      {(() => {
+        const lp = linesProgress(job.lines.map((l) => l.state));
+        return <div className="h-1.5 bg-line"><div className={`h-1.5 ${lp.allDone || done ? "bg-complete" : "bg-progress"}`} style={{ width: `${lp.allDone || done ? 100 : lp.pct}%` }} /></div>;
+      })()}
       <div className="flex items-center justify-between font-mono text-[13px] text-muted">
         <span>{hrs(job.actual_hours)} / {hrs(job.quoted_hours)} H</span>
         {job.board_colour === "red" ? <span className="font-medium text-progress">OVER QUOTE</span> : job.board_colour === "amber" ? <span className="font-medium text-hazard-text">NEARLY AT QUOTE</span> : null}
@@ -368,7 +372,6 @@ function JobView({
   const lineIds = new Set(job.lines.map((l) => l.id));
   const running = data.running.filter((r) => lineIds.has(r.line_id));
   const complete = isComplete(job.stage);
-  const current = Math.min(job.stage, COMPLETE);
   const nextOwner = job.lines.find((l) => l.state !== "done" && l.owner_id)?.owner_id ?? null;
   const tech = running.length ? running.map((r) => firstName(name(r.technician_id))).join(", ") : nextOwner ? firstName(name(nextOwner)) : "—";
   const eta = complete ? "Ready now" : etaLabel(job.eta, tz) ?? "Not set";
@@ -404,28 +407,8 @@ function JobView({
           </div>
         </div>
 
-        {/* stage progress */}
-        <section aria-label="Repair stages" className={`cut bg-bg px-6 py-[22px] ${complete ? "border border-complete shadow-[0_0_24px_rgba(22,163,74,.18)]" : "border border-line"}`}>
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-            <span className="font-mono text-[11px] tracking-[.16em] text-muted">REPAIR PROGRESS</span>
-            <span className={`font-mono text-[12px] font-medium tracking-[.14em] ${complete ? "text-complete" : "text-progress"}`}>
-              {complete ? "COMPLETE · READY TO COLLECT" : `IN PROGRESS · ${current} OF ${STAGE_COUNT} DONE`}
-            </span>
-          </div>
-          <ol className="m-0 grid list-none grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-2 p-0">
-            {STAGES.map((nm, i) => {
-              const done = i < current, now_ = i === current && !complete;
-              const bg = complete || done ? (complete ? GREEN : RED) : now_ ? `linear-gradient(90deg,${RED} 50%,${TRACK} 50%)` : TRACK;
-              return (
-                <li key={nm} className="flex flex-col gap-2.5">
-                  <div className="h-2" style={{ background: bg, boxShadow: complete ? "0 0 10px rgba(22,163,74,.45)" : done || now_ ? "0 0 10px rgba(225,29,46,.35)" : "none" }} />
-                  <span className="font-mono text-[11px] tracking-[.14em] text-muted">{String(i + 1).padStart(2, "0")}{complete || done ? " · DONE" : now_ ? " · NOW" : ""}</span>
-                  <span className={`font-display text-[15px] font-semibold uppercase tracking-[.06em] ${complete ? "text-complete" : now_ ? "text-progress" : done ? "text-ink" : "text-muted"}`}>{nm}</span>
-                </li>
-              );
-            })}
-          </ol>
-        </section>
+        {/* progress = job lines, in the same order as the list */}
+        <LineProgress lines={job.lines} />
 
         <div className="flex flex-wrap gap-6">
           {/* damage scan + photos (live) */}
