@@ -13,7 +13,7 @@ import { PhotoUpload } from "@/components/PhotoUpload";
 import { Badge, Button, Card, Field, Flash, Input, Select, buttonCls, td, th, theadCls } from "@/components/ui";
 import { requireAdmin } from "@/lib/auth";
 import { photoUrl } from "@/lib/photos";
-import { activityTime } from "@/lib/time";
+import { activityTime, dateLabel } from "@/lib/time";
 import { COMPLETE, STAGE_COUNT, STAGES, isComplete } from "@/lib/stages";
 import {
   JOB_STATUS_LABEL, PROCEDURE_LABEL, PROCEDURES, SUBSTATUS_TONE, durationSince, substatusLabel,
@@ -85,7 +85,8 @@ export default async function JobPage({ params, searchParams }: { params: Promis
   const runningTech = (running ?? [])[0]?.technician_id as string | undefined;
   const nextOwner = sorted.find((l) => !l.completed_at && l.assigned_technician_id)?.assigned_technician_id ?? undefined;
   const tech = shortName(techName.get(runningTech ?? nextOwner ?? ""));
-  const eta = complete ? "Ready now" : job.eta ? new Date(`${job.eta}T12:00:00`).toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short", timeZone: tz }).replace(",", "") : "Not set";
+  const dueOut = complete ? "Ready now" : dateLabel(job.due_out, tz) ?? "Not set";
+  const dueIn = dateLabel(job.due_in, tz) ?? "Not set";
 
   const eyebrow = [`JOB ${job.job_number ?? ""}`, job.bay && `BAY ${job.bay}`, `${job.insurer ? `INSURANCE: ${job.insurer}` : "PRIVATE"}`].filter(Boolean).join(" · ").toUpperCase();
   const subline = [job.rego, job.colour, job.vin].filter(Boolean).join(" · ");
@@ -121,7 +122,8 @@ export default async function JobPage({ params, searchParams }: { params: Promis
         </div>
         <div className="cut flex gap-7 border border-line bg-bg px-[22px] py-4">
           <div className="flex flex-col gap-1"><span className="font-mono text-[11px] tracking-[.14em] text-muted">TECH</span><span className="font-display text-[18px] font-semibold">{tech}</span></div>
-          <div className="flex flex-col gap-1"><span className="font-mono text-[11px] tracking-[.14em] text-muted">ETA</span><span className={`font-display text-[18px] font-semibold ${complete ? "text-complete" : "text-accent"}`}>{eta}</span></div>
+          <div className="flex flex-col gap-1"><span className="font-mono text-[11px] tracking-[.14em] text-muted">DUE IN</span><span className="font-display text-[18px] font-semibold">{dueIn}</span></div>
+          <div className="flex flex-col gap-1"><span className="font-mono text-[11px] tracking-[.14em] text-muted">DUE OUT</span><span className={`font-display text-[18px] font-semibold ${complete ? "text-complete" : "text-accent"}`}>{dueOut}</span></div>
           <div className="flex flex-col gap-1"><span className="font-mono text-[11px] tracking-[.14em] text-muted">ESTIMATE</span><span className="font-display text-[18px] font-semibold">{priced.length ? money(totalInc) : "—"}</span></div>
         </div>
       </div>

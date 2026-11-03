@@ -100,5 +100,5 @@ export function durationSince(iso: string | null, now = Date.now()) {
 export type JobFull = Job & {
   job_number: string | null; bay: string | null; customer_name: string | null; customer_phone: string | null;
   insurer: string | null; claim_number: string | null; vin: string | null; body_type: import("./vehicle").BodyType;
-  eta: string | null; work_summary: string | null; stage: number; track_token: string; collected_at: string | null;
+  due_in: string | null; due_out: string | null; work_summary: string | null; stage: number; track_token: string; collected_at: string | null;
 };

@@ -6,7 +6,7 @@ import { durationSince, type JobSubstatus } from "@/lib/types";
 
 type Row = {
   id: string; job_number: string | null; rego: string; make: string | null; model: string | null; bay: string | null;
-  customer_name: string | null; insurer: string | null; work_summary: string | null; eta: string | null; stage: number;
+  customer_name: string | null; insurer: string | null; work_summary: string | null; due_out: string | null; stage: number;
 };
 
 const vehicleName = (j: Row) => [j.make, j.model].filter(Boolean).join(" ") || "Vehicle";
@@ -27,7 +27,7 @@ function Kpi({ label, value, note, tone = "ink", featured }: { label: string; va
 export default async function WorkshopFloor() {
   const { supabase } = await requireAdmin();
   const [{ data: jobs }, { data: subs }, { data: running }, { data: lines }, { data: techs }, { data: s }, { data: lineStates }] = await Promise.all([
-    supabase.from("jobs").select("id, job_number, rego, make, model, bay, customer_name, insurer, work_summary, eta, stage").is("collected_at", null).order("job_number").returns<Row[]>(),
+    supabase.from("jobs").select("id, job_number, rego, make, model, bay, customer_name, insurer, work_summary, due_out, stage").is("collected_at", null).order("job_number").returns<Row[]>(),
     supabase.from("v_job_substatus").select("job_id, substatus, reason, since, working_count").returns<JobSubstatus[]>(),
     supabase.from("work_segments").select("technician_id, quote_lines(job_id, procedure)").is("ended_at", null),
     supabase.from("quote_lines").select("job_id, description, procedure, assigned_technician_id, completed_at").order("created_at"),
@@ -88,7 +88,7 @@ export default async function WorkshopFloor() {
               const done = isComplete(j.stage);
               const p = partsWait(j.id);
               const chip = stageChip(j.stage, p?.reason);
-              const eta = done ? "Complete · ready to collect" : p ? `Waiting on parts · ${durationSince(p.since, now)}` : etaText(j.eta, tz) ? `ETA ${etaText(j.eta, tz)}` : "No ETA set";
+              const eta = done ? "Complete · ready to collect" : p ? `Waiting on parts · ${durationSince(p.since, now)}` : etaText(j.due_out, tz) ? `Due out ${etaText(j.due_out, tz)}` : "No due-out date";
               return (
                 <Link key={j.id} href={`/admin/jobs/${j.id}`}
                   className={`plain cut flex flex-col gap-2.5 bg-bg px-5 py-[18px] text-inherit no-underline ${done ? "border border-complete" : p ? "border border-hazard" : "border border-line"}`}>

@@ -41,5 +41,5 @@ export function activityTime(iso: string, tz: string, now = Date.now()) {
   return d.toLocaleDateString("en-AU", { timeZone: tz, day: "numeric", month: "short" }).toUpperCase();
 }
 
-export const etaLabel = (iso: string | null, tz: string) =>
+export const dateLabel = (iso: string | null, tz: string) =>
   iso ? new Date(`${iso}T12:00:00`).toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short", timeZone: tz }).replace(",", "") : null;
