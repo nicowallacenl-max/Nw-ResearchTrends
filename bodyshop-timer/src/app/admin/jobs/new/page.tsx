@@ -18,7 +18,7 @@ export default async function NewJobPage({ searchParams }: { searchParams: Flash
             <input type="checkbox" name="standard_lines" defaultChecked className="mt-1 size-5 accent-[var(--neon)]" />
             <span>
               <span className="font-semibold text-ink">Add standard quote lines</span>
-              <span className="block text-muted">Strip → Repair → Prep → Paint → Refit at 0 h, owners auto-assigned. Untick for a one-off job (e.g. paint only).</span>
+              <span className="block text-muted">Strip → Panel → Repair → Prep → Paint → Refit at 0 h, owners auto-assigned. Untick for a one-off job (e.g. paint only).</span>
             </span>
           </label>
           <p className="m-0 text-muted">A job number (AB-…) is assigned automatically. Start typing the rego to pick a known vehicle or look it up in the registry. You&apos;ll add hours, prices, damage and photos on the next screen.</p>

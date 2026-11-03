@@ -1,8 +1,9 @@
-export const PROCEDURES = ["strip", "repair", "prep", "paint", "refit"] as const;
+export const PROCEDURES = ["strip", "panel", "repair", "prep", "paint", "refit"] as const;
 export type Procedure = (typeof PROCEDURES)[number];
 
 export const PROCEDURE_LABEL: Record<Procedure, string> = {
   strip: "Strip",
+  panel: "Panel",
   repair: "Repair",
   prep: "Prep",
   paint: "Paint",

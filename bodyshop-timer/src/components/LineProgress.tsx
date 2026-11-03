@@ -1,6 +1,7 @@
 import { linesProgress, type LineState } from "@/lib/stages";
+import { PROCEDURE_LABEL } from "@/lib/types";
 
-const PROC: Record<string, string> = { strip: "Strip", repair: "Repair", prep: "Prep", paint: "Paint", refit: "Refit" };
+const PROC: Record<string, string> = PROCEDURE_LABEL;
 const RED = "var(--progress)", GREEN = "var(--complete)", AMBER = "var(--hazard)", TRACK = "var(--border)";
 
 // "Repair progress" panel (JobDetail mockup style), one segment per job line in the same order as the list:
