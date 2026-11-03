@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { back, friendly } from "@/lib/flash";
 import { num, optStr, str } from "@/lib/form";
-import { PROCEDURES, type Procedure } from "@/lib/types";
+import { PROCEDURES, PROCEDURE_LABEL, type Procedure } from "@/lib/types";
 import { COMPLETE } from "@/lib/stages";
 import { BODY_TYPES, DAMAGE_TYPES, SEVERITIES, type BodyType } from "@/lib/vehicle";
 
@@ -30,13 +30,50 @@ function jobFields(form: FormData) {
   };
 }
 
+type Db = Awaited<ReturnType<typeof requireAdmin>>["supabase"];
+type AssignResult = { error: null; assigned: number; skipped: string[] } | { error: string; assigned?: never; skipped?: never };
+
+// The standard quote: one line per procedure, in workshop order, 0 h (hours come from the assessment, or from
+// Crashzone once integrated). Only added to a job with no lines. Owners are then auto-assigned.
+async function insertStandardLines(supabase: Db, jobId: string): Promise<AssignResult> {
+  const { count, error: e0 } = await supabase.from("quote_lines").select("id", { count: "exact", head: true }).eq("job_id", jobId);
+  if (e0) return { error: friendly(e0) };
+  if (count) return { error: "This job already has quote lines." };
+  const { error } = await supabase.from("quote_lines").insert(
+    PROCEDURES.map((p) => ({ job_id: jobId, procedure: p, description: PROCEDURE_LABEL[p], quoted_hours: 0 })),
+  );
+  if (error) return { error: friendly(error) };
+  return assignOpenLines(supabase, jobId);
+}
+
 export async function createJob(form: FormData) {
   const { supabase } = await requireAdmin();
   const fields = jobFields(form);
   if (!fields.rego) back("/admin/jobs/new", { error: "Rego is required." });
   const { data, error } = await supabase.from("jobs").insert(fields).select("id").single();
   if (error) back("/admin/jobs/new", { error: friendly(error) });
-  redirect(`/admin/jobs/${data.id}?ok=${encodeURIComponent("Job created. Now add its quote lines.")}`);
+  if (form.get("standard_lines") !== "on") {
+    redirect(`/admin/jobs/${data.id}?ok=${encodeURIComponent("Job created. Now add its quote lines.")}`);
+  }
+  const r = await insertStandardLines(supabase, data.id);
+  const flash: Record<string, string> = r.error !== null
+    ? { error: `Job created, but the standard quote lines weren't added: ${r.error}` }
+    : r.skipped.length
+      ? { error: `Job created with the standard quote lines. No active technician does: ${r.skipped.join(", ")}. Pick an owner for those.` }
+      : { ok: "Job created with the standard quote lines. Add hours and prices once it's assessed." };
+  redirect(`/admin/jobs/${data.id}?${new URLSearchParams(flash)}`);
+}
+
+// "Add standard lines" on a job that has none (e.g. the box was unticked, or jobs from before this existed).
+export async function addStandardLines(form: FormData) {
+  const { supabase } = await requireAdmin();
+  const jobId = str(form, "job_id");
+  const path = `/admin/jobs/${jobId}`;
+  const r = await insertStandardLines(supabase, jobId);
+  if (r.error !== null) back(path, { error: r.error });
+  back(path, r.skipped!.length
+    ? { error: `Standard lines added. No active technician does: ${r.skipped.join(", ")}. Pick an owner for those.` }
+    : { ok: "Standard quote lines added. Add hours and prices once it's assessed." });
 }
 
 export async function updateJob(form: FormData) {
@@ -137,23 +174,19 @@ export async function reopenLine(form: FormData) {
 
 // Spec: each item goes to a technician who does that procedure, picking the one with the fewest open hours.
 // Only fills unassigned lines, so manual choices are never overwritten.
-export async function autoAssign(form: FormData) {
-  const { supabase } = await requireAdmin();
-  const jobId = str(form, "job_id");
-  const path = `/admin/jobs/${jobId}`;
-
+async function assignOpenLines(supabase: Db, jobId: string): Promise<AssignResult> {
   const [{ data: lines, error: e1 }, { data: load, error: e2 }] = await Promise.all([
     supabase.from("quote_lines").select("id, procedure, quoted_hours").eq("job_id", jobId).is("assigned_technician_id", null).is("completed_at", null),
     supabase.from("v_technician_open_hours").select("technician_id, procedures, active, open_hours"),
   ]);
-  if (e1 || e2) back(path, { error: friendly(e1 ?? e2) });
-  if (!lines?.length) back(path, { ok: "Every open line already has a technician." });
+  if (e1 || e2) return { error: friendly(e1 ?? e2) };
 
   const openHours = new Map<string, number>((load ?? []).filter((t) => t.active).map((t) => [t.technician_id, Number(t.open_hours)]));
   const does = new Map<string, Procedure[]>((load ?? []).map((t) => [t.technician_id, t.procedures]));
 
   const skipped: string[] = [];
-  for (const line of lines) {
+  let assigned = 0;
+  for (const line of lines ?? []) {
     const candidates = [...openHours.entries()].filter(([id]) => does.get(id)?.includes(line.procedure));
     if (!candidates.length) {
       skipped.push(line.procedure);
@@ -162,13 +195,24 @@ export async function autoAssign(form: FormData) {
     candidates.sort((a, b) => a[1] - b[1]);
     const [techId] = candidates[0];
     const { error } = await supabase.from("quote_lines").update({ assigned_technician_id: techId }).eq("id", line.id);
-    if (error) back(path, { error: friendly(error) });
-    openHours.set(techId, candidates[0][1] + Number(line.quoted_hours)); // keep the balance as we go
+    if (error) return { error: friendly(error) };
+    // Keep the balance as we go. Count a 0 h line as a little load so a fresh 5-line job spreads across the team.
+    openHours.set(techId, candidates[0][1] + Math.max(Number(line.quoted_hours), 0.01));
+    assigned++;
   }
+  return { error: null, assigned, skipped: [...new Set(skipped)].map((p) => PROCEDURE_LABEL[p as Procedure] ?? p) };
+}
 
-  back(path, skipped.length
-    ? { error: `Assigned what I could. No active technician does: ${[...new Set(skipped)].join(", ")}.` }
-    : { ok: `Assigned ${lines.length} line${lines.length === 1 ? "" : "s"}.` });
+export async function autoAssign(form: FormData) {
+  const { supabase } = await requireAdmin();
+  const jobId = str(form, "job_id");
+  const path = `/admin/jobs/${jobId}`;
+  const r = await assignOpenLines(supabase, jobId);
+  if (r.error !== null) back(path, { error: r.error });
+  if (!r.assigned && !r.skipped.length) back(path, { ok: "Every open line already has a technician." });
+  back(path, r.skipped.length
+    ? { error: `Assigned what I could. No active technician does: ${r.skipped.join(", ")}.` }
+    : { ok: `Assigned ${r.assigned} line${r.assigned === 1 ? "" : "s"}.` });
 }
 
 

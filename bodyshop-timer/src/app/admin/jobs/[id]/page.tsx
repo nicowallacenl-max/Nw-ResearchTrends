@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
-  addDamage, addLine, advanceStage, autoAssign, deleteDamage, deleteJob, deleteLine, deletePhoto, markCollected,
+  addDamage, addLine, addStandardLines, advanceStage, autoAssign, deleteDamage, deleteJob, deleteLine, deletePhoto, markCollected,
   reopenLine, setJobStatus, stageBack, updateJob, updateLine,
 } from "../actions";
 import { JobFields } from "../JobFields";
@@ -73,6 +73,7 @@ export default async function JobPage({ params, searchParams }: { params: Promis
   const state = new Map((states ?? []).map((x) => [x.quote_line_id, x.state as keyof typeof STATE_LABEL]));
   const quotedTotal = sorted.reduce((sum, l) => sum + Number(l.quoted_hours), 0);
   const unassigned = sorted.filter((l) => !l.assigned_technician_id && !l.completed_at).length;
+  const needsHours = sorted.filter((l) => !l.completed_at && Number(l.quoted_hours) === 0).length;
   const priced = sorted.filter((l) => l.price !== null);
   const totalInc = priced.reduce((sum, l) => sum + Number(l.price), 0) * (1 + gst);
   const dmg = damage ?? [];
@@ -205,7 +206,12 @@ export default async function JobPage({ params, searchParams }: { params: Promis
                         <Select form={fid} name="procedure" defaultValue={l.procedure}><ProcedureOptions /></Select>
                       </td>
                       <td className={td}><Input form={fid} name="description" defaultValue={l.description} required className="w-full min-w-44" /></td>
-                      <td className={td}><Input form={fid} name="quoted_hours" type="number" step="0.1" min="0" defaultValue={l.quoted_hours} required className="w-20" /></td>
+                      <td className={td}>
+                        <Input form={fid} name="quoted_hours" type="number" step="0.1" min="0" defaultValue={l.quoted_hours} required
+                          aria-invalid={!l.completed_at && Number(l.quoted_hours) === 0 ? true : undefined}
+                          className={`w-20 ${!l.completed_at && Number(l.quoted_hours) === 0 ? "border-hazard" : ""}`} />
+                        {!l.completed_at && Number(l.quoted_hours) === 0 && <span className="mt-1 block font-mono text-[10px] uppercase tracking-[.12em] text-hazard-text">Needs hours</span>}
+                      </td>
                       <td className={td}><Input form={fid} name="price" type="number" step="0.01" min="0" defaultValue={l.price ?? ""} className="w-24" /></td>
                       <td className={td}><Select form={fid} name="assigned_technician_id" defaultValue={l.assigned_technician_id ?? ""} className="w-52"><TechOptions techs={allTechs} procedure={l.procedure} /></Select></td>
                       <td className={`${td} text-right tabular-nums ${over ? "font-semibold text-progress" : ""}`}>
@@ -229,6 +235,19 @@ export default async function JobPage({ params, searchParams }: { params: Promis
               </tbody>
             </table>
           </div>
+        )}
+        {sorted.length === 0 && (
+          <form action={addStandardLines} className="cut-sm mb-6 flex flex-wrap items-center gap-3 border border-line bg-bg-subtle px-4 py-3">
+            <input type="hidden" name="job_id" value={job.id} />
+            <span>No quote lines yet.</span>
+            <Button>Add standard lines</Button>
+            <span className="text-muted">Strip → Repair → Prep → Paint → Refit at 0 h, owners auto-assigned.</span>
+          </form>
+        )}
+        {needsHours > 0 && (
+          <p className="cut-sm mb-6 border border-hazard bg-orange-50 px-4 py-3">
+            {needsHours} open line{needsHours === 1 ? " has" : "s have"} 0 quoted hours. Add the hours once the job is assessed, so progress and over-quote warnings work.
+          </p>
         )}
         {unassigned > 0 && (
           <form action={autoAssign} className="cut-sm mb-6 flex flex-wrap items-center gap-3 border border-hazard bg-orange-50 px-4 py-3">
